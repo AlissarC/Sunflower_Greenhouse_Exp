@@ -1,0 +1,260 @@
+
+install.packages("gridExtra")
+install.packages("pdftools")
+install.packages("magick")  
+library(magick)
+library(gridExtra)
+library(grid)
+library(ggplot2)
+library(viridis)
+library(dplyr)
+library(grid)
+library(patchwork)
+library(pdftools)
+library(png)
+library(cowplot)
+#################################### Hypotheses figure ########################################
+ ###### Fig 1a
+drought <- seq(0, 1, length.out = 200)
+
+# Conceptual responses
+data <- data.frame(
+  Drought = rep(drought, 2),
+  beta_leaf = c(
+    560 - 350 * drought,   # HN: steeper decline
+    680 - 150 * drought    # LN: moderated decline
+  ),
+  N_level = rep(c("HN", "LN"), each = 200)
+)
+
+# Custom colors
+col_N <- c(
+  "HN" = "#440154",  # dark blue
+  "LN" = "#AADC32"   # viridis-like green
+)
+
+# Plot
+Fig1a_H <- ggplot(data, aes(x = Drought, y = beta_leaf, 
+                 color = N_level, linetype = N_level)) +
+  
+  geom_line(linewidth = 1.8) +
+  
+  scale_color_manual(values = col_N,
+                     labels = c("HN", "LN")) +
+  
+  scale_linetype_manual(values = c("HN" = "solid",
+                                   "LN" = "solid")) +
+  
+  labs(
+    x = "Drought severity ",
+    y = expression(beta[leaf])
+  ) +
+  
+  theme_classic(base_size = 15) +
+  theme(
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    legend.position = "right",
+    legend.title = element_blank(),  # removes legend title
+    axis.title = element_text(face = "bold")
+  )
+Fig1a_H
+
+############## Import Fig 1b
+#trim
+Fig1b_img <- image_read("../Fig/Fig1b.png")
+Fig1b_img_trim <- image_trim(Fig1b_img)
+image_write(Fig1b_img_trim, "biorender_trim.png", format = "png")
+
+#Right panel
+b_panel <- ggdraw() +
+  draw_image("biorender_trim.png",x = 0, y = 0, width = 1, height = 1)
+
+#Combine
+Figure1 <- plot_grid(
+  Fig1a_H,
+  b_panel,
+  nrow = 1,
+  rel_widths = c(1, 1)
+)
+Figure1
+
+ggsave("../Fig/Figure1.png",Figure1,width = 10,height = 4.5,dpi = 600)
+
+############################## Fig 1 a and b ##################################################
+
+FC_Fig <- read.csv('../input/FC.csv')
+names(FC_Fig)
+
+FC_Fig$plant = as.character(FC_Fig$plant)
+
+B2= subset(FC_Fig, ID_trt=="B2")
+B5= subset(FC_Fig, ID_trt=="B5")
+B6= subset(FC_Fig, ID_trt=="B6")
+B3= subset(FC_Fig, ID_trt=="B3")
+
+SPD= subset(FC_Fig, drought=="SPD")
+FDD= subset(FC_Fig, drought=="FDD")
+
+
+Fig2a <- ggplot(data = B5, aes(x = DAD, y = FC, color = plant)) +
+  geom_point(size = 3, alpha=0.5) +   # Add points with shapes for nitrogen levels
+  geom_line(aes(group = plant), size = 1)+
+  theme(legend.position = "right",
+        plot.title = element_text(size = rel(5), hjust = 1, vjust = 1),  
+        plot.title.position = "panel",  
+        legend.title = element_text(size = rel(2.2)),
+        legend.text = element_text(size = rel(2.2)),
+        plot.tag = element_text(size = rel(4)),
+        axis.title.y=element_text(size=rel(4), colour = 'black'),
+        axis.title.x=element_text(size=rel(4), colour = 'black'),
+        axis.text.x=element_text(size=rel(4), colour = 'black'),
+        axis.text.y=element_text(size=rel(4), colour = 'black'),
+        panel.background = element_rect(fill = 'white', colour = 'black'),
+        panel.grid.major = element_line(colour = "grey"),
+        panel.border = element_rect(colour = "black", fill = NA, size = 1)) +
+  ylab(expression(italic('FC')[''] *' (g water g soil' ^ '-1' * ')')) +
+  xlab(expression (italic('Day After Drought')))+
+  labs(title = "HN-SPD")  # Add title here
+Fig2a
+
+
+
+Fig2b <- ggplot(data = B2, aes(x = DAD, y = FC, color = plant)) +
+  geom_point(size = 3, alpha = 0.5) +   # Add points with shapes for nitrogen levels
+  geom_line(aes(group = plant), size = 1)+
+  theme(legend.position = "right",
+        plot.title = element_text(size = rel(5), hjust = 1, vjust = 1),  
+        plot.title.position = "panel",  
+        legend.title = element_text(size = rel(2.2)),
+        legend.text = element_text(size = rel(2.2)),
+        plot.tag = element_text(size = rel(4)),
+        axis.title.y=element_text(size=rel(4), colour = 'black'),
+        axis.title.x=element_text(size=rel(4), colour = 'black'),
+        axis.text.x=element_text(size=rel(4), colour = 'black'),
+        axis.text.y=element_text(size=rel(4), colour = 'black'),
+        panel.background = element_rect(fill = 'white', colour = 'black'),
+        panel.grid.major = element_line(colour = "gray"),
+        panel.border = element_rect(colour = "black", fill = NA, size = 1)) +
+  ylab(expression(italic('FC')[''] *' (g water g soil' ^ '-1' * ')')) +
+  xlab(expression (italic('Day After Drought')))+
+  labs(title = "LN-SPD")  # Add title here
+Fig2b
+
+
+Fig2c <- ggplot(data = B6, aes(x = DAD, y = FC, color = plant)) +
+  geom_point(size = 3, alpha=0.5) +   # Add points with shapes for nitrogen levels
+  geom_line(aes(group = plant), size = 1)+
+  theme(legend.position = "right",
+        plot.title = element_text(size = rel(5), hjust = 1, vjust = 1),  
+        plot.title.position = "panel",  
+        legend.title = element_text(size = rel(2.2)),
+        legend.text = element_text(size = rel(2.2)),
+        plot.tag = element_text(size = rel(4)),
+        axis.title.y=element_text(size=rel(4), colour = 'black'),
+        axis.title.x=element_text(size=rel(4), colour = 'black'),
+        axis.text.x=element_text(size=rel(4), colour = 'black'),
+        axis.text.y=element_text(size=rel(4), colour = 'black'),
+        panel.background = element_rect(fill = 'white', colour = 'black'),
+        panel.grid.major = element_line(colour = "grey"),
+        panel.border = element_rect(colour = "black", fill = NA, size = 1)) +
+  ylab(expression(italic('FC')[''] *' (g water g soil' ^ '-1' * ')')) +
+  xlab(expression (italic('Day After Drought')))+
+  labs(title = "HN-FDD")  # Add title here
+Fig2c
+
+
+Fig2d <- ggplot(data = B3, aes(x = DAD, y = FC, color = plant)) +
+  geom_point(size = 3, alpha = 0.5) +   # Add points with shapes for nitrogen levels
+  geom_line(aes(group = plant), size = 1)+
+  theme(legend.position = "right",
+        plot.title = element_text(size = rel(5), hjust = 1, vjust = 1),  
+        plot.title.position = "panel",  
+        legend.title = element_text(size = rel(2.2)),
+        legend.text = element_text(size = rel(2.2)),
+        plot.tag = element_text(size = rel(4)),
+        axis.title.y=element_text(size=rel(4), colour = 'black'),
+        axis.title.x=element_text(size=rel(4), colour = 'black'),
+        axis.text.x=element_text(size=rel(4), colour = 'black'),
+        axis.text.y=element_text(size=rel(4), colour = 'black'),
+        panel.background = element_rect(fill = 'white', colour = 'black'),
+        panel.grid.major = element_line(colour = "grey"),
+        panel.border = element_rect(colour = "black", fill = NA, size = 1)) +
+  ylab(expression(italic('FC')[''] *' (g water g soil' ^ '-1' * ')')) +
+  xlab(expression (italic('Day After Drought')))+
+  labs(title = "LN-FDD")  # Add title here
+Fig2d
+
+Fig2a.g <- ggplotGrob(Fig2a)
+Fig2b.g <- ggplotGrob(Fig2b)
+Fig2c.g <- ggplotGrob(Fig2c)
+Fig2d.g <- ggplotGrob(Fig21d)
+SPD <- cbind (Fig2a.g,Fig2b.g, size="max" )
+FDD <- cbind (Fig2c.g,Fig2d.g, size="max" )
+Fig2 <- rbind(SPD,FDD,size = 'max')
+
+jpeg(filename = "Fig2.png", 
+     width = 16, height = 14, units = 'in', res = 1400)
+grid.newpage()
+grid.draw(Fig1)
+
+grid.text("(a)", x = 0.1, y = 0.98, just = "left", gp = gpar(fontsize = 24, fontface = "bold"))
+grid.text("(b)", x = 0.60, y = 0.98, just = "left", gp = gpar(fontsize = 24, fontface = "bold"))
+grid.text("(c)", x = 0.1, y = 0.48, just = "left", gp = gpar(fontsize = 24, fontface = "bold"))
+grid.text("(d)", x = 0.60, y = 0.48, just = "left", gp = gpar(fontsize = 24, fontface = "bold"))
+
+dev.off()
+
+################################### Figure 3 ##################################
+Fig3 <-
+  (betaleaf_plot_t4 | Ncost_plot_t4) /
+  (Ecost_plot_t4 | betaplant_plot_t4) +
+  plot_layout(guides = "collect") +
+  plot_annotation(tag_levels = "a")
+
+Fig3
+
+ggsave("../Fig/Fig3.png",Fig3, width = 12, height = 10, dpi = 600)
+
+
+##################### Figure S1 #########################################
+fig_S1_subset = subset(stat_sunflower, drought %in% c("SPD", "FDD"))
+FigS1 <- ggplot(data= fig_S1_subset, aes(x=drought, y= Sdt_DD, color = N_level))+
+  geom_boxplot() +
+  geom_jitter(aes(shape = drought), size = 3) +
+  scale_shape_manual(values = c("FDD" = 17, "SPD" = 15)) +
+  theme(legend.position = "right",
+        plot.title = element_text(size = rel(2.2)),
+        legend.title = element_text(size = rel(1.5)),
+        legend.text = element_text(size = rel(1.5)),
+        plot.tag = element_text(size = rel(2)),
+        axis.title.y=element_text(size=rel(2.2), colour = 'black'),
+        axis.title.x=element_text(size=rel(2.2), colour = 'black'),
+        axis.text.x=element_text(size=rel(2), colour = 'black'),
+        axis.text.y=element_text(size=rel(2), colour = 'black'),
+        panel.background = element_rect(fill = 'white', colour = 'black'),
+        panel.grid.major = element_line(colour = "grey")) +
+  
+  ylab(expression (italic('Drought Severity Index')))+
+  xlab(expression (italic('Drought scenarios')))
+FigS1
+
+ggsave("FigS1.jpeg", plot = FigS1, 
+       width = 30, height = 20, units = "cm")
+
+############################ Temp and PAR ##########################################
+Temp_plot.g <- ggplotGrob(Temp)
+PAR_plot.g <- ggplotGrob(PAR)
+
+Greenhouse <- rbind (Temp_plot.g,PAR_plot.g, size="max" )
+
+jpeg(filename = "Greenhouse.jpeg", 
+     width = 14, height = 16, units = 'in', res = 600)
+grid.newpage()
+grid.draw(Greenhouse)
+grid.text("(a)", x = 0.03, y = 0.99, just = "left", gp = gpar(fontsize = 16, fontface = "bold"))
+grid.text("(b)", x = 0.03, y = 0.50, just = "left", gp = gpar(fontsize = 16, fontface = "bold"))
+dev.off()
+
+
+
