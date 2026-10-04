@@ -2,6 +2,7 @@
 # packages necessary
 R.version.string
 #########################################
+library(dplyr)
 library(ggplot2)
 library(car)
 library(emmeans)
@@ -10,40 +11,29 @@ library(piecewiseSEM)
 library(multcomp)
 library(r2glmm)
 library(viridis)
+library(MuMIn)
 ############## load data #################################################################### 
-stat_all <- read.csv("../output/sunflower.csv")
+stat_all <- read.csv("../output/sunflower_clean.csv")
 names(stat_all)
+View(stat_all)
 
-stat_t4 = subset(stat_all, time =="t4")
+table(stat_all$time)
+
+stat_t4 = subset(stat_all, time=="t4")
 table(stat_t4$time)
+
+stat_t4 <- stat_t4 %>%
+  rename(Cumul_N = Cumulative_N_mg)
+
 table(stat_t4$Cumul_N)
-betaleaf_lm_t4 <- lm(log(betaleaf)~ Cumul_N*Sdt_DD,
-                       data = stat_t4)
-Anova(betaleaf_lm_t4) 
-
-stat_t3 = subset(stat_all, time =="t3")
-table(stat_t3$time)
-table(stat_t3$Cumul_N)
-betaleaf_lm_t3 <- lm(log(betaleaf)~ Cumul_N*Sdt_DD,
-                     data = stat_t3)
-Anova(betaleaf_lm_t3) 
-
-stat_t2 = subset(stat_all, time =="t2")
-table(stat_t2$time)
-table(stat_t2$Cumul_N)
-betaleaf_lm_t2 <- lm(log(betaleaf)~ Cumul_N*Sdt_DD,
-                     data = stat_t2)
-Anova(betaleaf_lm_t2) 
 
 #############################  Analysis  #############################################
-names(stat_t4)
-plot(stat_t4$chi, stat_t4$betaleaf)
 
 ######################## Beta leaf ######################################################################################### 
 hist(stat_t4$betaleaf)
 hist(log(stat_t4$betaleaf))
 nrow(stat_t4)
-betaleaf_lm_t4 <- lm(log(betaleaf)~ Cumul_N*Sdt_DD,
+betaleaf_lm_t4 <- lm(log(betaleaf)~ Cumul_N*DSI,
                     data = stat_t4)
 Anova(betaleaf_lm_t4) ## drought and N effects 
 
@@ -65,11 +55,11 @@ hist(residuals, breaks = 20, main = "Histogram of Residuals") ## not bad
 ############################ set this for all figures in this script #####################################
 cumul_N_levels <- c(540, 1620)
 # prediction grid
-Sdt_DD_range_t4 <- seq(from = min(stat_t4$Sdt_DD, na.rm = TRUE), to = max(stat_t4$Sdt_DD, na.rm = TRUE),
+DSI_range_t4 <- seq(from = min(stat_t4$DSI, na.rm = TRUE), to = max(stat_t4$DSI, na.rm = TRUE),
   length.out = 400)
 #######################################################################################################
 
-newdat_t4_betaleaf <- expand.grid(Sdt_DD  = Sdt_DD_range_t4, Cumul_N = cumul_N_levels)
+newdat_t4_betaleaf <- expand.grid(DSI  = DSI_range_t4, Cumul_N = cumul_N_levels)
 
 # Predictions + 95% confidence interval 
 pred_log_betaleaf <- predict(betaleaf_lm_t4, newdata = newdat_t4_betaleaf, interval = "confidence")
@@ -79,7 +69,7 @@ newdat_t4_betaleaf$upr <- exp(pred_log_betaleaf[, "upr"])
 names(newdat_t4_betaleaf)
 
 #################################################################################################
-slopes_betaleaf<-  emtrends(betaleaf_lm_t4, ~ Cumul_N, var = "Sdt_DD",
+slopes_betaleaf<-  emtrends(betaleaf_lm_t4, ~ Cumul_N, var = "DSI",
          at = list(Cumul_N = c(540, 1620)))
 summary(slopes_betaleaf, infer = c(TRUE, TRUE))
 ################## Figures : betaleaf ################################################
@@ -89,27 +79,27 @@ pal_line <- viridis(100, option = "viridis", direction = -1)
 col_540  <- pal_line[10]
 col_1620 <- pal_line[90]
 
-betaleaf_plot_t4 <- ggplot(stat_t4, aes(x = Sdt_DD, y = betaleaf)) +
+betaleaf_plot_t4 <- ggplot(stat_t4, aes(x = DSI, y = betaleaf)) +
   
-  geom_point(aes(shape = factor(drought), color = Cumul_N),
-             size = 2.4, alpha = 0.60) +
+  geom_point(aes(shape = factor(Drought_trt), color = Cumul_N),
+             size = 3.5, alpha = 1) +
   scale_shape_manual(values = c(17, 15, 16), name = "Drought Scenario") +
-  scale_color_viridis_c(option = "viridis", direction = -1, name = "N level", end = 0.95) +
+  scale_color_viridis_c(option = "cviridis", direction = -1, name = "N level", end = 0.95) +
   
-  geom_ribbon(data = subset(newdat_t4_betaleaf, Cumul_N == 540),aes(x = Sdt_DD, ymin = lwr, ymax = upr),
+  geom_ribbon(data = subset(newdat_t4_betaleaf, Cumul_N == 540),aes(x = DSI, ymin = lwr, ymax = upr),
     inherit.aes = FALSE,fill = col_540, alpha = 0.10, colour = NA) +
   
-  geom_ribbon(data = subset(newdat_t4_betaleaf, Cumul_N == 1620),aes(x = Sdt_DD, ymin = lwr, ymax = upr),
+  geom_ribbon(data = subset(newdat_t4_betaleaf, Cumul_N == 1620),aes(x = DSI, ymin = lwr, ymax = upr),
     inherit.aes = FALSE,fill = col_1620, alpha = 0.10, colour = NA) +
   
   # fit lines
-  geom_line(data = subset(newdat_t4_betaleaf, Cumul_N == 540),aes(x = Sdt_DD, y = fit),
-    inherit.aes = FALSE,color = col_540, linewidth = 2.4, alpha = 0.95, linetype = "dashed") +
+  geom_line(data = subset(newdat_t4_betaleaf, Cumul_N == 540),aes(x = DSI, y = fit),
+    inherit.aes = FALSE,color = col_540, linewidth = 2.1, alpha = 0.95, linetype = "dashed") +
   
-  geom_line(data = subset(newdat_t4_betaleaf, Cumul_N == 1620),aes(x = Sdt_DD, y = fit),
-    inherit.aes = FALSE,color = col_1620, linewidth = 2.4, alpha = 0.95) +
+  geom_line(data = subset(newdat_t4_betaleaf, Cumul_N == 1620),aes(x = DSI, y = fit),
+    inherit.aes = FALSE,color = col_1620, linewidth = 2.1, alpha = 0.95) +
   
-  coord_cartesian(xlim = range(Sdt_DD_range_t4)) +
+  coord_cartesian(xlim = range(DSI_range_t4)) +
   
   theme_classic(base_size = 16) +
   theme(
@@ -132,7 +122,7 @@ betaleaf_plot_t4
 hist(stat_t4$Ncost)
 hist(log(stat_t4$Ncost))
 
-Cost_nitrogen_lm_t4 <- lm(Ncost ~ Cumul_N*Sdt_DD,
+Cost_nitrogen_lm_t4 <- lm(Ncost ~ Cumul_N*DSI,
                             data = stat_t4)
 Anova(Cost_nitrogen_lm_t4)# N and interaction effects 
 
@@ -150,7 +140,7 @@ densityPlot(residuals(Cost_nitrogen_lm_t4))
 residuals <- resid(Cost_nitrogen_lm_t4)
 hist(residuals, breaks = 20, main = "Histogram of Residuals") ## not bad
 
-newdat_t4_Ncost <- expand.grid(Sdt_DD  = Sdt_DD_range_t4, Cumul_N = cumul_N_levels)
+newdat_t4_Ncost <- expand.grid(DSI  = DSI_range_t4, Cumul_N = cumul_N_levels)
 
 # Predictions + 95% confidence interval 
 pred_Ncost <- predict(Cost_nitrogen_lm_t4,
@@ -162,7 +152,7 @@ newdat_t4_Ncost$lwr <- pred_Ncost[, "lwr"]
 newdat_t4_Ncost$upr <- pred_Ncost[, "upr"]
 
 #################################################################################################
-slopes_Ncost<-  emtrends(Cost_nitrogen_lm_t4, ~ Cumul_N, var = "Sdt_DD",
+slopes_Ncost<-  emtrends(Cost_nitrogen_lm_t4, ~ Cumul_N, var = "DSI",
                              at = list(Cumul_N = c(540, 1620)))
 summary(slopes_Ncost, infer = c(TRUE, TRUE))
 ################## Figures : Ncost ################################################
@@ -172,27 +162,27 @@ pal_line <- viridis(100, option = "viridis", direction = -1)
 col_540  <- pal_line[10]
 col_1620 <- pal_line[90]
 
-Ncost_plot_t4 <- ggplot(stat_t4, aes(x = Sdt_DD, y = Ncost)) +
+Ncost_plot_t4 <- ggplot(stat_t4, aes(x = DSI, y = Ncost)) +
   
-  geom_point(aes(shape = factor(drought), color = Cumul_N),
-             size = 2.4, alpha = 0.60) +
+  geom_point(aes(shape = factor(Drought_trt), color = Cumul_N),
+             size = 3.5, alpha = 1) +
   scale_shape_manual(values = c(17, 15, 16), name = "Drought Scenario") +
-  scale_color_viridis_c(option = "viridis", direction = -1, name = "N level", end = 0.95) +
+  scale_color_viridis_c(option = "cviridis", direction = -1, name = "N level", end = 0.95) +
   
-  geom_ribbon(data = subset(newdat_t4_Ncost, Cumul_N == 540),aes(x = Sdt_DD, ymin = lwr, ymax = upr),
+  geom_ribbon(data = subset(newdat_t4_Ncost, Cumul_N == 540),aes(x = DSI, ymin = lwr, ymax = upr),
               inherit.aes = FALSE,fill = col_540, alpha = 0.10, colour = NA) +
   
-  geom_ribbon(data = subset(newdat_t4_Ncost, Cumul_N == 1620),aes(x = Sdt_DD, ymin = lwr, ymax = upr),
+  geom_ribbon(data = subset(newdat_t4_Ncost, Cumul_N == 1620),aes(x = DSI, ymin = lwr, ymax = upr),
               inherit.aes = FALSE,fill = col_1620, alpha = 0.10, colour = NA) +
   
   # fit lines
-  geom_line(data = subset(newdat_t4_Ncost, Cumul_N == 540),aes(x = Sdt_DD, y = fit),
-            inherit.aes = FALSE,color = col_540, linewidth = 2.4, alpha = 0.95) +
+  geom_line(data = subset(newdat_t4_Ncost, Cumul_N == 540),aes(x = DSI, y = fit),
+            inherit.aes = FALSE,color = col_540, linewidth = 2.1, alpha = 0.95) +
   
-  geom_line(data = subset(newdat_t4_Ncost, Cumul_N == 1620),aes(x = Sdt_DD, y = fit),
-            inherit.aes = FALSE,color = col_1620, linewidth = 2.4, alpha = 0.95, linetype = "dashed") +
+  geom_line(data = subset(newdat_t4_Ncost, Cumul_N == 1620),aes(x = DSI, y = fit),
+            inherit.aes = FALSE,color = col_1620, linewidth = 2.1, alpha = 0.95, linetype = "dashed") +
   
-  coord_cartesian(xlim = range(Sdt_DD_range_t4)) +
+  coord_cartesian(xlim = range(DSI_range_t4)) +
   
   theme_classic(base_size = 16) +
   theme(
@@ -206,9 +196,8 @@ Ncost_plot_t4 <- ggplot(stat_t4, aes(x = Sdt_DD, y = Ncost)) +
     panel.background = element_rect(fill = "white", colour = NA),
     axis.line = element_line(linewidth = 0.8, colour = "black")) +
   
-  ylab(expression(italic('b')['plant'])) +
+  ylab(expression(italic(b)[plant] ~(g ~ roots ~ gN ~ leaves^{-1}))) +
   xlab(expression(italic('DSI')))
-
 Ncost_plot_t4
 
 
@@ -216,7 +205,12 @@ Ncost_plot_t4
 hist(stat_t4$Ecost)
 hist(log(stat_t4$Ecost))
 
-Cost_trans_roots_lm_t4 <- lm(Ecost~ Cumul_N*Sdt_DD,
+Cost_trans_roots_lm_t4_bis <- lm(Ecost_bis~ Cumul_N*DSI,
+                             data = stat_t4)
+
+Anova(Cost_trans_roots_lm_t4_bis) 
+
+Cost_trans_roots_lm_t4 <- lm(Ecost~ Cumul_N*DSI,
                                data = stat_t4)
 
 Anova(Cost_trans_roots_lm_t4) # Nothing
@@ -237,7 +231,7 @@ residuals <- resid(Cost_trans_roots_lm_t4)
 hist(residuals, breaks = 20, main = "Histogram of Residuals") ## not bad
 
 
-newdat_t4_Ecost <- expand.grid(Sdt_DD  = Sdt_DD_range_t4, Cumul_N = cumul_N_levels)
+newdat_t4_Ecost <- expand.grid(DSI  = DSI_range_t4, Cumul_N = cumul_N_levels)
 
 # Predictions + 95% confidence interval 
 pred_Ecost <- predict(Cost_trans_roots_lm_t4,
@@ -251,33 +245,32 @@ newdat_t4_Ecost$upr <- pred_Ecost[, "upr"]
 #################################################################################################
 
 ################## Figures : Ecost ################################################
-
 # colors
-pal_line <- viridis(100, option = "viridis", direction = -1)
+pal_line <- viridis(100, option = "cviridis", direction = -1)
 col_540  <- pal_line[10]
 col_1620 <- pal_line[90]
 
-Ecost_plot_t4 <- ggplot(stat_t4, aes(x = Sdt_DD, y = Ecost)) +
+Ecost_plot_t4 <- ggplot(stat_t4, aes(x = DSI, y = Ecost)) +
   
-  geom_point(aes(shape = factor(drought), color = Cumul_N),
-             size = 2.4, alpha = 0.60) +
+  geom_point(aes(shape = factor(Drought_trt), color = Cumul_N),
+             size = 3.5, alpha = 1) +
   scale_shape_manual(values = c(17, 15, 16), name = "Drought Scenario") +
   scale_color_viridis_c(option = "viridis", direction = -1, name = "N level", end = 0.95) +
   
-  geom_ribbon(data = subset(newdat_t4_Ecost, Cumul_N == 540),aes(x = Sdt_DD, ymin = lwr, ymax = upr),
+  geom_ribbon(data = subset(newdat_t4_Ecost, Cumul_N == 540),aes(x = DSI, ymin = lwr, ymax = upr),
               inherit.aes = FALSE,fill = col_540, alpha = 0.10, colour = NA) +
   
-  geom_ribbon(data = subset(newdat_t4_Ecost, Cumul_N == 1620),aes(x = Sdt_DD, ymin = lwr, ymax = upr),
+  geom_ribbon(data = subset(newdat_t4_Ecost, Cumul_N == 1620),aes(x = DSI, ymin = lwr, ymax = upr),
               inherit.aes = FALSE,fill = col_1620, alpha = 0.10, colour = NA) +
   
   # fit lines
-  geom_line(data = subset(newdat_t4_Ecost, Cumul_N == 540),aes(x = Sdt_DD, y = fit),
-            inherit.aes = FALSE,color = col_540, linewidth = 2.4, alpha = 0.95, linetype = "dashed") +
+  geom_line(data = subset(newdat_t4_Ecost, Cumul_N == 540),aes(x = DSI, y = fit),
+            inherit.aes = FALSE,color = col_540, linewidth = 2.1, alpha = 0.95, linetype = "dashed") +
   
-  geom_line(data = subset(newdat_t4_Ecost, Cumul_N == 1620),aes(x = Sdt_DD, y = fit),
-            inherit.aes = FALSE,color = col_1620, linewidth = 2.4, alpha = 0.95, linetype = "dashed") +
+  geom_line(data = subset(newdat_t4_Ecost, Cumul_N == 1620),aes(x = DSI, y = fit),
+            inherit.aes = FALSE,color = col_1620, linewidth = 2.1, alpha = 0.95, linetype = "dashed") +
   
-  coord_cartesian(xlim = range(Sdt_DD_range_t4)) +
+  coord_cartesian(xlim = range(DSI_range_t4)) +
   
   theme_classic(base_size = 16) +
   theme(
@@ -290,8 +283,8 @@ Ecost_plot_t4 <- ggplot(stat_t4, aes(x = Sdt_DD, y = Ecost)) +
     plot.background  = element_rect(fill = "white", colour = NA),
     panel.background = element_rect(fill = "white", colour = NA),
     axis.line = element_line(linewidth = 0.8, colour = "black")) +
-  
-  ylab(expression(italic('a')['plant'])) +
+  ylab(expression(italic(a)[plant] ~(g ~ roots ~ L ~ water^{-1}))) +
+ # ylab(expression(italic('a')['plant'])) +
   xlab(expression(italic('DSI')))
 
 Ecost_plot_t4
@@ -300,7 +293,7 @@ Ecost_plot_t4
 ############################## betaplant ####################################################
 names(stat_t4)
 hist(log(stat_t4$betaplant))
-betaplant_lm_t4 <- lm(log(betaplant)~ Cumul_N*Sdt_DD,
+betaplant_lm_t4 <- lm(log(betaplant)~ Cumul_N*DSI,
                     data = stat_t4)
 Anova(betaplant_lm_t4) # N effects and interaction. plus mariginal drought effects 
 summary(betaplant_lm_t4) 
@@ -320,7 +313,7 @@ hist(residuals, breaks = 20, main = "Histogram of Residuals") ## not bad
 summary(betaplant_lm_t4)
 range(stat_t4$betaplant)
 
-newdat_t4_betaplant<- expand.grid(Sdt_DD  = Sdt_DD_range_t4, Cumul_N = cumul_N_levels)
+newdat_t4_betaplant<- expand.grid(DSI  = DSI_range_t4, Cumul_N = cumul_N_levels)
 
 # Predictions + 95% confidence interval 
 pred_log_betaplant <- predict(betaplant_lm_t4, newdata = newdat_t4_betaplant, interval = "confidence")
@@ -331,37 +324,38 @@ names(newdat_t4_betaplant)
 
 #################################################################################################
 #################################################################################################
-slopes_betaplant<-  emtrends(betaplant_lm_t4, ~ Cumul_N, var = "Sdt_DD",
+slopes_betaplant<-  emtrends(betaplant_lm_t4, ~ Cumul_N, var = "DSI",
                             at = list(Cumul_N = c(540, 1620)))
 summary(slopes_betaplant, infer = c(TRUE, TRUE))
+
 ################## Figures : betaplant ################################################
 
 # colors
-pal_line <- viridis(100, option = "viridis", direction = -1)
+pal_line <- viridis(100, option = "cviridis", direction = -1)
 col_540  <- pal_line[10]
 col_1620 <- pal_line[90]
 
-betaplant_plot_t4 <- ggplot(stat_t4, aes(x = Sdt_DD, y = betaplant)) +
+betaplant_plot_t4 <- ggplot(stat_t4, aes(x = DSI, y = betaplant)) +
   
-  geom_point(aes(shape = factor(drought), color = Cumul_N),
-             size = 2.4, alpha = 0.60) +
+  geom_point(aes(shape = factor(Drought_trt), color = Cumul_N),
+             size = 3.5, alpha = 1) +
   scale_shape_manual(values = c(17, 15, 16), name = "Drought Scenario") +
-  scale_color_viridis_c(option = "viridis", direction = -1, name = "N level", end = 0.95) +
+  scale_color_viridis_c(option = "cviridis", direction = -1, name = "N level", end = 0.95) +
   
-  geom_ribbon(data = subset(newdat_t4_betaplant, Cumul_N == 540),aes(x = Sdt_DD, ymin = lwr, ymax = upr),
+  geom_ribbon(data = subset(newdat_t4_betaplant, Cumul_N == 540),aes(x = DSI, ymin = lwr, ymax = upr),
               inherit.aes = FALSE,fill = col_540, alpha = 0.10, colour = NA) +
   
-  geom_ribbon(data = subset(newdat_t4_betaplant, Cumul_N == 1620),aes(x = Sdt_DD, ymin = lwr, ymax = upr),
+  geom_ribbon(data = subset(newdat_t4_betaplant, Cumul_N == 1620),aes(x = DSI, ymin = lwr, ymax = upr),
               inherit.aes = FALSE,fill = col_1620, alpha = 0.10, colour = NA) +
   
   # fit lines
-  geom_line(data = subset(newdat_t4_betaplant, Cumul_N == 540),aes(x = Sdt_DD, y = fit),
-            inherit.aes = FALSE,color = col_540, linewidth = 2.4, alpha = 0.95) +
+  geom_line(data = subset(newdat_t4_betaplant, Cumul_N == 540),aes(x = DSI, y = fit),
+            inherit.aes = FALSE,color = col_540, linewidth = 2.1, alpha = 0.95) +
   
-  geom_line(data = subset(newdat_t4_betaplant, Cumul_N == 1620),aes(x = Sdt_DD, y = fit),
-            inherit.aes = FALSE,color = col_1620, linewidth = 2.4, alpha = 0.95, linetype = "dashed") +
+  geom_line(data = subset(newdat_t4_betaplant, Cumul_N == 1620),aes(x = DSI, y = fit),
+            inherit.aes = FALSE,color = col_1620, linewidth = 2.1, alpha = 0.95, linetype = "dashed") +
   
-  coord_cartesian(xlim = range(Sdt_DD_range_t4)) +
+  coord_cartesian(xlim = range(DSI_range_t4)) +
   
   theme_classic(base_size = 16) +
   theme(
@@ -375,24 +369,21 @@ betaplant_plot_t4 <- ggplot(stat_t4, aes(x = Sdt_DD, y = betaplant)) +
     panel.background = element_rect(fill = "white", colour = NA),
     axis.line = element_line(linewidth = 0.8, colour = "black")) +
   
-  ylab(expression(italic('β')['plant'])) +
+  ylab(expression(italic(beta)[plant] ~ (L ~ water ~ gN ~ leaves^{-1})))
   xlab(expression(italic('DSI')))
-
 betaplant_plot_t4
 
 ####################### Structural equation model ################################
 plot(stat_t4$betaleaf, stat_t4$vcmax_tleaf)
 
 sunflower_beta <- psem(
-  lm1 <- lm(Ncost~ Sdt_DD + Cumul_N , data = stat_t4),
-  lm2 <- lm(Ecost ~Sdt_DD, data = stat_t4),
+  lm1 <- lm(Ncost~ DSI + Cumul_N , data = stat_t4),
+  lm2 <- lm(Ecost ~DSI, data = stat_t4),
   lm3 <- lm(betaplant~Ncost + Ecost, data = stat_t4),
-  lm4 <- lm(betaleaf~ betaplant+ Sdt_DD + Cumul_N , data = stat_t4),
+  lm4 <- lm(betaleaf~ betaplant+ DSI + Cumul_N , data = stat_t4),
   lm5 <- lm(vcmax_tleaf~betaleaf + betaplant, data = stat_t4),
   lm6 <- lm(Narea~vcmax_tleaf, data = stat_t4))
 
 summary(sunflower_beta)
 plot(sunflower_beta)
-
-
 

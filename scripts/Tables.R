@@ -8,30 +8,32 @@ library(flextable)
 
 
 N_levels <- c(540, 1620)
-var_name <- "Sdt_DD"   
+var_name <- "DSI"   
 
-betaplant_lm_t4       <- lm(log(betaplant) ~ Cumul_N * Sdt_DD, data = stat_t4)
-Cost_nitrogen_lm_t4   <- lm(Ncost ~ Cumul_N * Sdt_DD, data = stat_t4)
-Ecost_lm_t4           <- lm(Ecost ~ Cumul_N * Sdt_DD, data = stat_t4)     
-betaleaf_lm_t4        <- lm(log(betaleaf) ~ Cumul_N * Sdt_DD, data = stat_t4)
+betaplant_lm_t4       <- lm(log(betaplant) ~ Cumul_N * DSI, data = stat_t4)
+Cost_nitrogen_lm_t4   <- lm(Ncost ~ Cumul_N * DSI, data = stat_t4)
+Ecost_lm_t4           <- lm(Ecost ~ Cumul_N * DSI, data = stat_t4)     
+betaleaf_lm_t4        <- lm(log(betaleaf) ~ Cumul_N * DSI, data = stat_t4)
 
 extract_anova_fp <- function(model, response_label) {
-  tab <- as.data.frame(Anova(model, type = 2))
+  tab <- as.data.frame(car::Anova(model, type = 2))
+  
   out <- tab %>%
-    mutate(
+    dplyr::mutate(
       Response  = response_label,
       Predictor = rownames(tab),
       F_value   = round(`F value`, 3),
       P_value   = round(`Pr(>F)`, 4),
-      Signif    = case_when(
+      Signif    = dplyr::case_when(
         `Pr(>F)` < 0.001 ~ "***",
         `Pr(>F)` < 0.01  ~ "**",
         `Pr(>F)` < 0.05  ~ "*",
         TRUE ~ ""
       )
     ) %>%
-    select(Response, Predictor, F_value, P_value, Signif) %>%
-    filter(Predictor != "(Intercept)")
+    dplyr::select(Response, Predictor, F_value, P_value, Signif) %>%
+    dplyr::filter(Predictor != "(Intercept)")
+  
   out
 }
 
@@ -49,7 +51,7 @@ print(doc, target = "../tables/ANOVA_F_P_tables.docx")
 
 
 #extract slope tables + comparison 
-make_slope_outputs <- function(model, response_label, N_levels, var_name = "Sdt_DD") {
+make_slope_outputs <- function(model, response_label, N_levels, var_name = "DSI") {
   
   tr <- emtrends(
     model,
@@ -64,7 +66,7 @@ make_slope_outputs <- function(model, response_label, N_levels, var_name = "Sdt_
       Slope_SE  = sprintf("%.3f \u00B1 %.3f", !!sym(paste0(var_name, ".trend")), SE),
       P_value   = round(p.value, 4)
     ) %>%
-    select(Response, Cumul_N, Slope_SE, P_value)
+    dplyr::select(Response, Cumul_N, Slope_SE, P_value)
   
   cld_tbl <- as.data.frame(cld(tr, Letters = letters)) %>%
     mutate(
@@ -72,14 +74,14 @@ make_slope_outputs <- function(model, response_label, N_levels, var_name = "Sdt_
       Slope_SE = sprintf("%.3f \u00B1 %.3f%s",
                          !!sym(paste0(var_name, ".trend")), SE, .group)
     ) %>%
-    select(Response, Cumul_N, Slope_SE, .group)
+    dplyr::select(Response, Cumul_N, Slope_SE, .group)
 
   comp_tbl <- as.data.frame(pairs(tr)) %>%
     mutate(
       Response = response_label,
       P_value  = round(p.value, 4)
     ) %>%
-    select(Response, contrast, estimate, SE, df, t.ratio, P_value)
+    dplyr::select(Response, contrast, estimate, SE, df, t.ratio, P_value)
   
   list(
     slopes_tbl = slopes_tbl,

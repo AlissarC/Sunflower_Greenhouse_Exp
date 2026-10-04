@@ -1,0 +1,2787 @@
+
+## load packages
+install.packages("plantecophys")
+library(plantecophys)
+library(tidyverse)
+## load functions
+sourceDirectory('functions')
+
+######################## load data ####################
+t4_3july <- read.csv("../input/Licor/Stan_july3.csv")
+t4_3july
+head(t4_3july)
+colnames(t4_3july)
+sapply(t4_3july,class)
+table(t4_3july$id)
+
+t4_4july <- read.csv("../input/Licor/Stan_july4.csv")
+t4_4july
+head(t4_4july)
+colnames(t4_4july)
+sapply(t4_4july,class)
+table(t4_4july$id)
+
+t4_4july_yadi <- read.csv("../input/Licor/a_ci_yadi_july4_2023.csv")
+t4_4july_yadi
+head(t4_4july_yadi)
+colnames(t4_4july_yadi)
+sapply(t4_4july_yadi,class)
+table(t4_4july_yadi$id)
+
+t4_7july <- read.csv("../input/Licor/Stan_july7.csv")
+t4_7july
+head(t4_7july)
+colnames(t4_7july)
+sapply(t4_7july,class)
+table(t4_7july$id)
+
+############### selection of variables of interest: id, machine, E, A, Ca, Ci, gsw, VPDleaf, Adyn, Qin, Tleaf
+colnames(t4_3july)
+t4_3july_selec <- t4_3july[, c(7,8,10,12,13,14,17,28,35,112, 132)] 
+names(t4_3july_selec)
+
+colnames(t4_4july)
+t4_4july_selec <- t4_4july[, c(7,8,10,12,13,14,17,28,35,112, 132)] 
+names(t4_4july_selec)
+
+colnames(t4_4july_yadi)
+t4_4july_yadi_selec <- t4_4july_yadi[, c(7,8,10,12,13,14,17,28,35,112, 132)] 
+names(t4_4july_yadi_selec)
+
+
+colnames(t4_7july)
+t4_7july_selec <- t4_7july[, c(7,8,10,12,13,14,17,28,35,112, 132)] 
+names(t4_7july_selec)
+
+
+######### merge all data frames
+Aci_t4 <- rbind(t4_3july_selec, t4_4july_selec, t4_4july_yadi_selec, t4_7july_selec)
+colnames(Aci_t4)
+table(Aci_t4$id)
+nrow(Aci_t4)
+#### create a file to store data ##################
+curve_fits_TPU_t4 <- c()
+curve_fits_TPU_t4
+## start visualization, curve fitting, and data frame creation
+## start visualization, curve fitting, and data frame creation
+
+###################### plant b1_hn_ww_p1 #################################################################
+##########################################################################################################
+table(Aci_t4$id)
+
+aci_id1 = subset(Aci_t4, id=="b1_hn_ww_p1")
+nrow(aci_id1)
+aci_id1[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id1)
+
+fit_aci_id1 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                         # citransition = 300,
+                         useRd = FALSE,
+                         Tcorrect = FALSE,
+                         fitTPU = TRUE,
+                         fitmethod = 'bilinear',
+                         data = aci_id1)
+summary(fit_aci_id1)
+coef_id1_pre <- coef(fit_aci_id1)
+coef_id1_pre
+#### plot
+plot(fit_aci_id1)
+names(aci_id1)
+aci_id1_data <- cbind(aci_id1[1, c(1, 2, 4, 6, 7)],
+                              mean(aci_id1[,8]),
+                              mean(aci_id1[,11]),
+                              fit_aci_id1[[2]][1,1],
+                              fit_aci_id1[[2]][1,2],
+                              fit_aci_id1[[2]][2,1],
+                              fit_aci_id1[[2]][2,2],
+                              fit_aci_id1[[2]][3,1],
+                              fit_aci_id1[[2]][3,2],
+                              fit_aci_id1[[2]][4,1],
+                              fit_aci_id1[[2]][4,2],
+                              fit_aci_id1$RMSE,
+                              fit_aci_id1$Ci_transition,
+                              fit_aci_id1$citransition,
+                              fit_aci_id1$Km,
+                              fit_aci_id1$GammaStar,
+                              fit_aci_id1$fitmethod,
+                              fit_aci_id1$Tcorrect,
+                              fit_aci_id1$fitTPU)
+colnames(aci_id1_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                                     'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                                     'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                                     'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                                     'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                                     'aci_tcorrect', 'aci_fittpu')
+aci_id1_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id1_data)
+curve_fits_TPU_t4 
+############################################################################################################
+
+###################### plant id1 b1_hn_ww_p2  #################################################################
+##########################################################################################################
+table(Aci_t4$id)
+
+aci_id2 = subset(Aci_t4, id=="b1_hn_ww_p2")
+nrow(aci_id2)
+aci_id2[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id2)
+
+fit_aci_id2 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                     # citransition = 300,
+                     useRd = FALSE,
+                     Tcorrect = FALSE,
+                     fitTPU = TRUE,
+                     fitmethod = 'bilinear',
+                     data = aci_id2)
+summary(fit_aci_id2)
+coef_id2 <- coef(fit_aci_id2)
+coef_id2
+#### plot
+plot(fit_aci_id2)
+names(aci_id2)
+aci_id2_data <- cbind(aci_id2[1, c(1, 2, 4, 6, 7)],
+                      mean(aci_id2[,8]),
+                      mean(aci_id2[,11]),
+                      fit_aci_id2[[2]][1,1],
+                      fit_aci_id2[[2]][1,2],
+                      fit_aci_id2[[2]][2,1],
+                      fit_aci_id2[[2]][2,2],
+                      fit_aci_id2[[2]][3,1],
+                      fit_aci_id2[[2]][3,2],
+                      fit_aci_id2[[2]][4,1],
+                      fit_aci_id2[[2]][4,2],
+                      fit_aci_id2$RMSE,
+                      fit_aci_id2$Ci_transition,
+                      fit_aci_id2$citransition,
+                      fit_aci_id2$Km,
+                      fit_aci_id2$GammaStar,
+                      fit_aci_id2$fitmethod,
+                      fit_aci_id2$Tcorrect,
+                      fit_aci_id2$fitTPU)
+colnames(aci_id2_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                            'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                            'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                            'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                            'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                            'aci_tcorrect', 'aci_fittpu')
+aci_id2_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id2_data)
+curve_fits_TPU_t4
+############################################################################################################
+
+
+###################### plant id1 b1_hn_ww_p3 #################################################################
+##########################################################################################################
+table(Aci_t4$id)
+
+aci_id3 = subset(Aci_t4, id=="b1_hn_ww_p3")
+nrow(aci_id3)
+aci_id3[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id3)
+
+fit_aci_id3 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                     # citransition = 300,
+                     useRd = FALSE,
+                     Tcorrect = FALSE,
+                     fitTPU = TRUE,
+                     fitmethod = 'bilinear',
+                     data = aci_id3)
+summary(fit_aci_id3)
+coef_id3 <- coef(fit_aci_id3)
+coef_id3
+#### plot
+plot(fit_aci_id3)
+names(aci_id3)
+aci_id3_data <- cbind(aci_id3[1, c(1, 2, 4, 6, 7)],
+                      mean(aci_id3[,8]),
+                      mean(aci_id3[,11]),
+                      fit_aci_id3[[2]][1,1],
+                      fit_aci_id3[[2]][1,2],
+                      fit_aci_id3[[2]][2,1],
+                      fit_aci_id3[[2]][2,2],
+                      fit_aci_id3[[2]][3,1],
+                      fit_aci_id3[[2]][3,2],
+                      fit_aci_id3[[2]][4,1],
+                      fit_aci_id3[[2]][4,2],
+                      fit_aci_id3$RMSE,
+                      fit_aci_id3$Ci_transition,
+                      fit_aci_id3$citransition,
+                      fit_aci_id3$Km,
+                      fit_aci_id3$GammaStar,
+                      fit_aci_id3$fitmethod,
+                      fit_aci_id3$Tcorrect,
+                      fit_aci_id3$fitTPU)
+colnames(aci_id3_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                            'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                            'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                            'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                            'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                            'aci_tcorrect', 'aci_fittpu')
+aci_id3_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id3_data)
+curve_fits_TPU_t4 
+############################################################################################################
+
+
+###################### plant id1 b1_hn_ww_p4:   #################################################################
+##########################################################################################################
+table(Aci_t4$id)
+
+aci_id4 = subset(Aci_t4, id=="b1_hn_ww_p4")
+nrow(aci_id4)
+aci_id4[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id4)
+
+fit_aci_id4 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                     # citransition = 300,
+                     useRd = FALSE,
+                     Tcorrect = FALSE,
+                     fitTPU = TRUE,
+                     fitmethod = 'bilinear',
+                     data = aci_id4)
+summary(fit_aci_id4)
+coef_id4<- coef(fit_aci_id4)
+coef_id4
+#### plot
+plot(fit_aci_id4)
+names(aci_id4)
+aci_id4_data <- cbind(aci_id4[1, c(1, 2, 4, 6, 7)],
+                      mean(aci_id4[,8]),
+                      mean(aci_id4[,11]),
+                      fit_aci_id4[[2]][1,1],
+                      fit_aci_id4[[2]][1,2],
+                      fit_aci_id4[[2]][2,1],
+                      fit_aci_id4[[2]][2,2],
+                      fit_aci_id4[[2]][3,1],
+                      fit_aci_id4[[2]][3,2],
+                      fit_aci_id4[[2]][4,1],
+                      fit_aci_id4[[2]][4,2],
+                      fit_aci_id4$RMSE,
+                      fit_aci_id4$Ci_transition,
+                      fit_aci_id4$citransition,
+                      fit_aci_id4$Km,
+                      fit_aci_id4$GammaStar,
+                      fit_aci_id4$fitmethod,
+                      fit_aci_id4$Tcorrect,
+                      fit_aci_id4$fitTPU)
+colnames(aci_id4_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                            'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                            'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                            'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                            'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                            'aci_tcorrect', 'aci_fittpu')
+aci_id4_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id4_data)
+curve_fits_TPU_t4
+############################################################################################################
+
+
+###################### plant id1 b1_hn_ww_p5  #################################################################
+##########################################################################################################
+table(Aci_t4$id)
+
+aci_id5 = subset(Aci_t4, id=="b1_hn_ww_p5")
+nrow(aci_id5)
+aci_id5[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id5)
+
+fit_aci_id5 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                     # citransition = 300,
+                     useRd = FALSE,
+                     Tcorrect = FALSE,
+                     fitTPU = TRUE,
+                     fitmethod = 'bilinear',
+                     data = aci_id5)
+summary(fit_aci_id5)
+coef_id5 <- coef(fit_aci_id5)
+coef_id5
+#### plot
+plot(fit_aci_id5)
+names(aci_id5)
+aci_id5_data <- cbind(aci_id5[1, c(1, 2, 4, 6, 7)],
+                      mean(aci_id5[,8]),
+                      mean(aci_id5[,11]),
+                      fit_aci_id5[[2]][1,1],
+                      fit_aci_id5[[2]][1,2],
+                      fit_aci_id5[[2]][2,1],
+                      fit_aci_id5[[2]][2,2],
+                      fit_aci_id5[[2]][3,1],
+                      fit_aci_id5[[2]][3,2],
+                      fit_aci_id5[[2]][4,1],
+                      fit_aci_id5[[2]][4,2],
+                      fit_aci_id5$RMSE,
+                      fit_aci_id5$Ci_transition,
+                      fit_aci_id5$citransition,
+                      fit_aci_id5$Km,
+                      fit_aci_id5$GammaStar,
+                      fit_aci_id5$fitmethod,
+                      fit_aci_id5$Tcorrect,
+                      fit_aci_id5$fitTPU)
+colnames(aci_id5_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                            'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                            'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                            'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                            'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                            'aci_tcorrect', 'aci_fittpu')
+aci_id5_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id5_data)
+curve_fits_TPU_t4
+############################################################################################################
+
+
+###################### plant id1 b1_hn_ww_p6 #################################################################
+##########################################################################################################
+table(Aci_t4$id)
+
+aci_id6 = subset(Aci_t4, id=="b1_hn_ww_p6")
+nrow(aci_id6)
+aci_id6[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id6)
+
+fit_aci_id6 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                     # citransition = 300,
+                     useRd = FALSE,
+                     Tcorrect = FALSE,
+                     fitTPU = TRUE,
+                     fitmethod = 'bilinear',
+                     data = aci_id6)
+summary(fit_aci_id6)
+coef_id6 <- coef(fit_aci_id6)
+coef_id6
+#### plot
+plot(fit_aci_id6)
+names(aci_id6)
+aci_id6_data <- cbind(aci_id6[1, c(1, 2, 4, 6, 7)],
+                      mean(aci_id6[,8]),
+                      mean(aci_id6[,11]),
+                      fit_aci_id6[[2]][1,1],
+                      fit_aci_id6[[2]][1,2],
+                      fit_aci_id6[[2]][2,1],
+                      fit_aci_id6[[2]][2,2],
+                      fit_aci_id6[[2]][3,1],
+                      fit_aci_id6[[2]][3,2],
+                      fit_aci_id6[[2]][4,1],
+                      fit_aci_id6[[2]][4,2],
+                      fit_aci_id6$RMSE,
+                      fit_aci_id6$Ci_transition,
+                      fit_aci_id6$citransition,
+                      fit_aci_id6$Km,
+                      fit_aci_id6$GammaStar,
+                      fit_aci_id6$fitmethod,
+                      fit_aci_id6$Tcorrect,
+                      fit_aci_id6$fitTPU)
+colnames(aci_id6_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                            'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                            'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                            'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                            'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                            'aci_tcorrect', 'aci_fittpu')
+aci_id6_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id6_data)
+curve_fits_TPU_t4
+############################################################################################################
+
+
+###################### plant id1 b1_hn_ww_p7 #################################################################
+##########################################################################################################
+table(Aci_t4$id)
+
+aci_id7 = subset(Aci_t4, id=="b1_hn_ww_p7")
+nrow(aci_id7)
+aci_id7[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id7)
+
+fit_aci_id7 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                     # citransition = 300,
+                     useRd = FALSE,
+                     Tcorrect = FALSE,
+                     fitTPU = TRUE,
+                     fitmethod = 'bilinear',
+                     data = aci_id7)
+summary(fit_aci_id7)
+coef_id7 <- coef(fit_aci_id7)
+coef_id7
+#### plot
+plot(fit_aci_id7)
+names(aci_id7)
+aci_id7_data <- cbind(aci_id7[1, c(1, 2, 4, 6, 7)],
+                      mean(aci_id7[,8]),
+                      mean(aci_id7[,11]),
+                      fit_aci_id7[[2]][1,1],
+                      fit_aci_id7[[2]][1,2],
+                      fit_aci_id7[[2]][2,1],
+                      fit_aci_id7[[2]][2,2],
+                      fit_aci_id7[[2]][3,1],
+                      fit_aci_id7[[2]][3,2],
+                      fit_aci_id7[[2]][4,1],
+                      fit_aci_id7[[2]][4,2],
+                      fit_aci_id7$RMSE,
+                      fit_aci_id7$Ci_transition,
+                      fit_aci_id7$citransition,
+                      fit_aci_id7$Km,
+                      fit_aci_id7$GammaStar,
+                      fit_aci_id7$fitmethod,
+                      fit_aci_id7$Tcorrect,
+                      fit_aci_id7$fitTPU)
+colnames(aci_id7_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                            'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                            'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                            'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                            'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                            'aci_tcorrect', 'aci_fittpu')
+aci_id7_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id7_data)
+curve_fits_TPU_t4 
+############################################################################################################
+
+
+###################### plant id1 b1_hn_ww_p8 : a lot of oscillations #################################################################
+##########################################################################################################
+table(Aci_t4$id)
+
+aci_id8 = subset(Aci_t4, id=="b1_hn_ww_p8")
+nrow(aci_id8)
+aci_id8[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id8)
+
+fit_aci_id8 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                     # citransition = 300,
+                     useRd = FALSE,
+                     Tcorrect = FALSE,
+                     fitTPU = TRUE,
+                     fitmethod = 'bilinear',
+                     data = aci_id8)
+summary(fit_aci_id8)
+coef_id8 <- coef(fit_aci_id8)
+coef_id8
+#### plot
+plot(fit_aci_id8)
+names(aci_id8)
+aci_id8_data <- cbind(aci_id8[1, c(1, 2, 4, 6, 7)],
+                      mean(aci_id8[,8]),
+                      mean(aci_id8[,11]),
+                      fit_aci_id8[[2]][1,1],
+                      fit_aci_id8[[2]][1,2],
+                      fit_aci_id8[[2]][2,1],
+                      fit_aci_id8[[2]][2,2],
+                      fit_aci_id8[[2]][3,1],
+                      fit_aci_id8[[2]][3,2],
+                      fit_aci_id8[[2]][4,1],
+                      fit_aci_id8[[2]][4,2],
+                      fit_aci_id8$RMSE,
+                      fit_aci_id8$Ci_transition,
+                      fit_aci_id8$citransition,
+                      fit_aci_id8$Km,
+                      fit_aci_id8$GammaStar,
+                      fit_aci_id8$fitmethod,
+                      fit_aci_id8$Tcorrect,
+                      fit_aci_id8$fitTPU)
+colnames(aci_id8_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                            'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                            'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                            'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                            'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                            'aci_tcorrect', 'aci_fittpu')
+aci_id8_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id8_data)
+curve_fits_TPU_t4
+############################################################################################################
+########## plot all HN B1 curves 
+plot(Adyn ~ Ci, data = aci_id1, ylim = c(0, 50))
+points(Adyn ~ Ci, data = aci_id2, col = "red")  
+points(Adyn ~ Ci, data = aci_id3, col = "blue")
+points(Adyn ~ Ci, data = aci_id4, col = "darkgreen")### p4 low A
+points(Adyn ~ Ci, data = aci_id5, col = "grey") 
+points(Adyn ~ Ci, data = aci_id6, col = "pink")
+points(Adyn ~ Ci, data = aci_id7, col = "green") ## P7  low A
+points(Adyn ~ Ci, data = aci_id8, col = "cyan")
+
+
+###################### plant id1 b5_hn_spd_p1 #################################################################
+##########################################################################################################
+table(Aci_t4$id)
+
+aci_id9 = subset(Aci_t4, id=="b5_hn_spd_p1")
+nrow(aci_id9)
+aci_id9[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id9)
+
+fit_aci_id9 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                     # citransition = 300,
+                     useRd = FALSE,
+                     Tcorrect = FALSE,
+                     fitTPU = TRUE,
+                     fitmethod = 'bilinear',
+                     data = aci_id9)
+summary(fit_aci_id9)
+coef_id9 <- coef(fit_aci_id9)
+coef_id9
+#### plot
+plot(fit_aci_id9)
+names(aci_id9)
+aci_id9_data <- cbind(aci_id9[1, c(1, 2, 4, 6, 7)],
+                      mean(aci_id9[,8]),
+                      mean(aci_id9[,11]),
+                      fit_aci_id9[[2]][1,1],
+                      fit_aci_id9[[2]][1,2],
+                      fit_aci_id9[[2]][2,1],
+                      fit_aci_id9[[2]][2,2],
+                      fit_aci_id9[[2]][3,1],
+                      fit_aci_id9[[2]][3,2],
+                      fit_aci_id9[[2]][4,1],
+                      fit_aci_id9[[2]][4,2],
+                      fit_aci_id9$RMSE,
+                      fit_aci_id9$Ci_transition,
+                      fit_aci_id9$citransition,
+                      fit_aci_id9$Km,
+                      fit_aci_id9$GammaStar,
+                      fit_aci_id9$fitmethod,
+                      fit_aci_id9$Tcorrect,
+                      fit_aci_id9$fitTPU)
+colnames(aci_id9_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                            'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                            'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                            'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                            'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                            'aci_tcorrect', 'aci_fittpu')
+aci_id9_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id9_data)
+curve_fits_TPU_t4
+############################################################################################################
+
+
+###################### plant id1 b5_hn_spd_p2 #################################################################
+##########################################################################################################
+table(Aci_t4$id)
+
+aci_id10 = subset(Aci_t4, id=="b5_hn_spd_p2")
+nrow(aci_id10)
+aci_id10[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id10)
+
+fit_aci_id10 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                     # citransition = 300,
+                     useRd = FALSE,
+                     Tcorrect = FALSE,
+                     fitTPU = TRUE,
+                     fitmethod = 'bilinear',
+                     data = aci_id10)
+summary(fit_aci_id10)
+coef_id10 <- coef(fit_aci_id10)
+coef_id10
+#### plot
+plot(fit_aci_id10)
+names(aci_id10)
+aci_id10_data <- cbind(aci_id10[1, c(1, 2, 4, 6, 7)],
+                      mean(aci_id10[,8]),
+                      mean(aci_id10[,11]),
+                      fit_aci_id10[[2]][1,1],
+                      fit_aci_id10[[2]][1,2],
+                      fit_aci_id10[[2]][2,1],
+                      fit_aci_id10[[2]][2,2],
+                      fit_aci_id10[[2]][3,1],
+                      fit_aci_id10[[2]][3,2],
+                      fit_aci_id10[[2]][4,1],
+                      fit_aci_id10[[2]][4,2],
+                      fit_aci_id10$RMSE,
+                      fit_aci_id10$Ci_transition,
+                      fit_aci_id10$citransition,
+                      fit_aci_id10$Km,
+                      fit_aci_id10$GammaStar,
+                      fit_aci_id10$fitmethod,
+                      fit_aci_id10$Tcorrect,
+                      fit_aci_id10$fitTPU)
+colnames(aci_id10_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                            'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                            'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                            'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                            'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                            'aci_tcorrect', 'aci_fittpu')
+aci_id10_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id10_data)
+curve_fits_TPU_t4
+############################################################################################################
+
+
+###################### plant id1 b5_hn_spd_p3 #################################################################
+##########################################################################################################
+table(Aci_t4$id)
+
+aci_id11 = subset(Aci_t4, id=="b5_hn_spd_p3")
+nrow(aci_id11)
+aci_id11[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id11)
+
+fit_aci_id11 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id11)
+summary(fit_aci_id11)
+coef_id11 <- coef(fit_aci_id11)
+coef_id11
+#### plot
+plot(fit_aci_id11)
+names(aci_id11)
+aci_id11_data <- cbind(aci_id11[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id11[,8]),
+                       mean(aci_id11[,11]),
+                       fit_aci_id11[[2]][1,1],
+                       fit_aci_id11[[2]][1,2],
+                       fit_aci_id11[[2]][2,1],
+                       fit_aci_id11[[2]][2,2],
+                       fit_aci_id11[[2]][3,1],
+                       fit_aci_id11[[2]][3,2],
+                       fit_aci_id11[[2]][4,1],
+                       fit_aci_id11[[2]][4,2],
+                       fit_aci_id11$RMSE,
+                       fit_aci_id11$Ci_transition,
+                       fit_aci_id11$citransition,
+                       fit_aci_id11$Km,
+                       fit_aci_id11$GammaStar,
+                       fit_aci_id11$fitmethod,
+                       fit_aci_id11$Tcorrect,
+                       fit_aci_id11$fitTPU)
+colnames(aci_id11_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id11_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id11_data)
+curve_fits_TPU_t4
+############################################################################################################
+
+###################### plant id1 b5_hn_spd_p4  #################################################################
+##########################################################################################################
+table(Aci_t4$id)
+
+aci_id12 = subset(Aci_t4, id=="b5_hn_spd_p4")
+nrow(aci_id12)
+aci_id12[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id12)
+
+fit_aci_id12 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id12)
+summary(fit_aci_id12)
+coef_id12 <- coef(fit_aci_id12)
+coef_id12
+#### plot
+plot(fit_aci_id12)
+names(aci_id12)
+aci_id12_data <- cbind(aci_id12[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id12[,8]),
+                       mean(aci_id12[,11]),
+                       fit_aci_id12[[2]][1,1],
+                       fit_aci_id12[[2]][1,2],
+                       fit_aci_id12[[2]][2,1],
+                       fit_aci_id12[[2]][2,2],
+                       fit_aci_id12[[2]][3,1],
+                       fit_aci_id12[[2]][3,2],
+                       fit_aci_id12[[2]][4,1],
+                       fit_aci_id12[[2]][4,2],
+                       fit_aci_id12$RMSE,
+                       fit_aci_id12$Ci_transition,
+                       fit_aci_id12$citransition,
+                       fit_aci_id12$Km,
+                       fit_aci_id12$GammaStar,
+                       fit_aci_id12$fitmethod,
+                       fit_aci_id12$Tcorrect,
+                       fit_aci_id12$fitTPU)
+colnames(aci_id12_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id12_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id12_data)
+curve_fits_TPU_t4 
+############################################################################################################
+
+###################### plant id1 b5_hn_spd_p5 ################################################################
+##########################################################################################################
+table(Aci_t4$id)
+
+aci_id13 = subset(Aci_t4, id=="b5_hn_spd_p5")
+nrow(aci_id13)
+aci_id13[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id13)
+
+fit_aci_id13 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id13)
+summary(fit_aci_id13)
+coef_id13 <- coef(fit_aci_id13)
+coef_id13
+#### plot
+plot(fit_aci_id13)
+names(aci_id13)
+aci_id13_data <- cbind(aci_id13[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id13[,8]),
+                       mean(aci_id13[,11]),
+                       fit_aci_id13[[2]][1,1],
+                       fit_aci_id13[[2]][1,2],
+                       fit_aci_id13[[2]][2,1],
+                       fit_aci_id13[[2]][2,2],
+                       fit_aci_id13[[2]][3,1],
+                       fit_aci_id13[[2]][3,2],
+                       fit_aci_id13[[2]][4,1],
+                       fit_aci_id13[[2]][4,2],
+                       fit_aci_id13$RMSE,
+                       fit_aci_id13$Ci_transition,
+                       fit_aci_id13$citransition,
+                       fit_aci_id13$Km,
+                       fit_aci_id13$GammaStar,
+                       fit_aci_id13$fitmethod,
+                       fit_aci_id13$Tcorrect,
+                       fit_aci_id13$fitTPU)
+colnames(aci_id13_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id13_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id13_data)
+curve_fits_TPU_t4
+############################################################################################################
+
+###################### plant id1 b5_hn_spd_p6 ################################################################
+##########################################################################################################
+table(Aci_t4$id)
+
+aci_id14 = subset(Aci_t4, id=="b5_hn_spd_p6")
+nrow(aci_id14)
+aci_id14[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id14)
+
+fit_aci_id14 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id14)
+summary(fit_aci_id14)
+coef_id14 <- coef(fit_aci_id14)
+coef_id14
+#### plot
+plot(fit_aci_id14)
+names(aci_id14)
+aci_id14_data <- cbind(aci_id14[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id14[,8]),
+                       mean(aci_id14[,11]),
+                       fit_aci_id14[[2]][1,1],
+                       fit_aci_id14[[2]][1,2],
+                       fit_aci_id14[[2]][2,1],
+                       fit_aci_id14[[2]][2,2],
+                       fit_aci_id14[[2]][3,1],
+                       fit_aci_id14[[2]][3,2],
+                       fit_aci_id14[[2]][4,1],
+                       fit_aci_id14[[2]][4,2],
+                       fit_aci_id14$RMSE,
+                       fit_aci_id14$Ci_transition,
+                       fit_aci_id14$citransition,
+                       fit_aci_id14$Km,
+                       fit_aci_id14$GammaStar,
+                       fit_aci_id14$fitmethod,
+                       fit_aci_id14$Tcorrect,
+                       fit_aci_id14$fitTPU)
+colnames(aci_id14_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id14_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id14_data)
+curve_fits_TPU_t4
+############################################################################################################
+
+###################### plant id1 b5_hn_spd_p7 ################################################################
+##########################################################################################################
+table(Aci_t4$id)
+
+aci_id15 = subset(Aci_t4, id=="b5_hn_spd_p7")
+nrow(aci_id15)
+aci_id15[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id15)
+
+fit_aci_id15 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id15)
+summary(fit_aci_id15)
+coef_id15 <- coef(fit_aci_id15)
+coef_id15
+#### plot
+plot(fit_aci_id15)
+names(aci_id15)
+aci_id15_data <- cbind(aci_id15[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id15[,8]),
+                       mean(aci_id15[,11]),
+                       fit_aci_id15[[2]][1,1],
+                       fit_aci_id15[[2]][1,2],
+                       fit_aci_id15[[2]][2,1],
+                       fit_aci_id15[[2]][2,2],
+                       fit_aci_id15[[2]][3,1],
+                       fit_aci_id15[[2]][3,2],
+                       fit_aci_id15[[2]][4,1],
+                       fit_aci_id15[[2]][4,2],
+                       fit_aci_id15$RMSE,
+                       fit_aci_id15$Ci_transition,
+                       fit_aci_id15$citransition,
+                       fit_aci_id15$Km,
+                       fit_aci_id15$GammaStar,
+                       fit_aci_id15$fitmethod,
+                       fit_aci_id15$Tcorrect,
+                       fit_aci_id15$fitTPU)
+colnames(aci_id15_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id15_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id15_data)
+curve_fits_TPU_t4
+############################################################################################################
+
+###################### plant id1 b5_hn_spd_p8 ################################################################
+##########################################################################################################
+table(Aci_t4$id)
+
+aci_id16 = subset(Aci_t4, id=="b5_hn_spd_p8")
+nrow(aci_id16)
+aci_id16[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id16)
+
+fit_aci_id16 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id16)
+summary(fit_aci_id16)
+coef_id16 <- coef(fit_aci_id16)
+coef_id16
+#### plot
+plot(fit_aci_id16)
+names(aci_id16)
+aci_id16_data <- cbind(aci_id16[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id16[,8]),
+                       mean(aci_id16[,11]),
+                       fit_aci_id16[[2]][1,1],
+                       fit_aci_id16[[2]][1,2],
+                       fit_aci_id16[[2]][2,1],
+                       fit_aci_id16[[2]][2,2],
+                       fit_aci_id16[[2]][3,1],
+                       fit_aci_id16[[2]][3,2],
+                       fit_aci_id16[[2]][4,1],
+                       fit_aci_id16[[2]][4,2],
+                       fit_aci_id16$RMSE,
+                       fit_aci_id16$Ci_transition,
+                       fit_aci_id16$citransition,
+                       fit_aci_id16$Km,
+                       fit_aci_id16$GammaStar,
+                       fit_aci_id16$fitmethod,
+                       fit_aci_id16$Tcorrect,
+                       fit_aci_id16$fitTPU)
+colnames(aci_id16_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id16_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id16_data)
+curve_fits_TPU_t4
+############################################################################################################
+########## plot all HN B5 curves 
+plot(Adyn ~ Ci, data = aci_id9, ylim = c(0, 50))
+points(Adyn ~ Ci, data = aci_id10, col = "red")  
+points(Adyn ~ Ci, data = aci_id11, col = "blue")
+points(Adyn ~ Ci, data = aci_id12, col = "darkgreen") # P4 Abnormal low A 
+points(Adyn ~ Ci, data = aci_id13, col = "grey") # P5 Abnormal low A 
+points(Adyn ~ Ci, data = aci_id14, col = "pink")
+points(Adyn ~ Ci, data = aci_id15, col = "green") 
+points(Adyn ~ Ci, data = aci_id16, col = "cyan")
+
+
+
+###################### plant id1 b6_hn_fdd_p1 ################################################################
+##########################################################################################################
+table(Aci_t4$id)
+
+aci_id17 = subset(Aci_t4, id=="b6_hn_fdd_p1")
+nrow(aci_id17)
+aci_id17[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id17)
+
+fit_aci_id17 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id17)
+summary(fit_aci_id17)
+coef_id17 <- coef(fit_aci_id17)
+coef_id17
+#### plot
+plot(fit_aci_id17)
+names(aci_id17)
+aci_id17_data <- cbind(aci_id17[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id17[,8]),
+                       mean(aci_id17[,11]),
+                       fit_aci_id17[[2]][1,1],
+                       fit_aci_id17[[2]][1,2],
+                       fit_aci_id17[[2]][2,1],
+                       fit_aci_id17[[2]][2,2],
+                       fit_aci_id17[[2]][3,1],
+                       fit_aci_id17[[2]][3,2],
+                       fit_aci_id17[[2]][4,1],
+                       fit_aci_id17[[2]][4,2],
+                       fit_aci_id17$RMSE,
+                       fit_aci_id17$Ci_transition,
+                       fit_aci_id17$citransition,
+                       fit_aci_id17$Km,
+                       fit_aci_id17$GammaStar,
+                       fit_aci_id17$fitmethod,
+                       fit_aci_id17$Tcorrect,
+                       fit_aci_id17$fitTPU)
+colnames(aci_id17_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id17_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id17_data)
+curve_fits_TPU_t4 
+############################################################################################################
+
+
+###################### plant id1 b6_hn_fdd_p2 ################################################################
+##########################################################################################################
+table(Aci_t4$id)
+
+aci_id18 = subset(Aci_t4, id=="b6_hn_fdd_p2")
+nrow(aci_id18)
+aci_id18[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id18)
+
+fit_aci_id18 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id18)
+summary(fit_aci_id18)
+coef_id18 <- coef(fit_aci_id18)
+coef_id18
+#### plot
+plot(fit_aci_id18)
+names(aci_id18)
+aci_id18_data <- cbind(aci_id18[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id18[,8]),
+                       mean(aci_id18[,11]),
+                       fit_aci_id18[[2]][1,1],
+                       fit_aci_id18[[2]][1,2],
+                       fit_aci_id18[[2]][2,1],
+                       fit_aci_id18[[2]][2,2],
+                       fit_aci_id18[[2]][3,1],
+                       fit_aci_id18[[2]][3,2],
+                       fit_aci_id18[[2]][4,1],
+                       fit_aci_id18[[2]][4,2],
+                       fit_aci_id18$RMSE,
+                       fit_aci_id18$Ci_transition,
+                       fit_aci_id18$citransition,
+                       fit_aci_id18$Km,
+                       fit_aci_id18$GammaStar,
+                       fit_aci_id18$fitmethod,
+                       fit_aci_id18$Tcorrect,
+                       fit_aci_id18$fitTPU)
+colnames(aci_id18_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id18_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id18_data)
+curve_fits_TPU_t4
+############################################################################################################
+
+
+###################### plant id1 b6_hn_fdd_p3   ################################################################
+##########################################################################################################
+table(Aci_t4$id)
+
+aci_id19 = subset(Aci_t4, id=="b6_hn_fdd_p3")
+nrow(aci_id19)
+aci_id19[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id19)
+
+fit_aci_id19 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id19)
+summary(fit_aci_id19)
+coef_id19 <- coef(fit_aci_id19)
+coef_id19
+#### plot
+plot(fit_aci_id19)
+names(aci_id19)
+aci_id19_data <- cbind(aci_id19[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id19[,8]),
+                       mean(aci_id19[,11]),
+                       fit_aci_id19[[2]][1,1],
+                       fit_aci_id19[[2]][1,2],
+                       fit_aci_id19[[2]][2,1],
+                       fit_aci_id19[[2]][2,2],
+                       fit_aci_id19[[2]][3,1],
+                       fit_aci_id19[[2]][3,2],
+                       fit_aci_id19[[2]][4,1],
+                       fit_aci_id19[[2]][4,2],
+                       fit_aci_id19$RMSE,
+                       fit_aci_id19$Ci_transition,
+                       fit_aci_id19$citransition,
+                       fit_aci_id19$Km,
+                       fit_aci_id19$GammaStar,
+                       fit_aci_id19$fitmethod,
+                       fit_aci_id19$Tcorrect,
+                       fit_aci_id19$fitTPU)
+colnames(aci_id19_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id19_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id19_data)
+curve_fits_TPU_t4 
+############################################################################################################
+
+
+###################### plant id1 b6_hn_fdd_p4 ################################################################
+##########################################################################################################
+table(Aci_t4$id)
+
+aci_id20 = subset(Aci_t4, id=="b6_hn_fdd_p4")
+nrow(aci_id20)
+aci_id20[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id20)
+
+fit_aci_id20 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id20)
+summary(fit_aci_id20)
+coef_id20 <- coef(fit_aci_id20)
+coef_id20
+#### plot
+plot(fit_aci_id20)
+names(aci_id20)
+aci_id20_data <- cbind(aci_id20[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id20[,8]),
+                       mean(aci_id20[,11]),
+                       fit_aci_id20[[2]][1,1],
+                       fit_aci_id20[[2]][1,2],
+                       fit_aci_id20[[2]][2,1],
+                       fit_aci_id20[[2]][2,2],
+                       fit_aci_id20[[2]][3,1],
+                       fit_aci_id20[[2]][3,2],
+                       fit_aci_id20[[2]][4,1],
+                       fit_aci_id20[[2]][4,2],
+                       fit_aci_id20$RMSE,
+                       fit_aci_id20$Ci_transition,
+                       fit_aci_id20$citransition,
+                       fit_aci_id20$Km,
+                       fit_aci_id20$GammaStar,
+                       fit_aci_id20$fitmethod,
+                       fit_aci_id20$Tcorrect,
+                       fit_aci_id20$fitTPU)
+colnames(aci_id20_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id20_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id20_data)
+curve_fits_TPU_t4 
+############################################################################################################
+
+###################### plant id1 b6_hn_fdd_p5  ################################################################
+##########################################################################################################
+
+aci_id21 = subset(Aci_t4, id=="b6_hn_fdd_p5")
+nrow(aci_id21)
+aci_id21[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id21)
+
+fit_aci_id21 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id21)
+summary(fit_aci_id21)
+coef_id21 <- coef(fit_aci_id21)
+coef_id21
+#### plot
+plot(fit_aci_id21)
+names(aci_id21)
+aci_id21_data <- cbind(aci_id21[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id21[,8]),
+                       mean(aci_id21[,11]),
+                       fit_aci_id21[[2]][1,1],
+                       fit_aci_id21[[2]][1,2],
+                       fit_aci_id21[[2]][2,1],
+                       fit_aci_id21[[2]][2,2],
+                       fit_aci_id21[[2]][3,1],
+                       fit_aci_id21[[2]][3,2],
+                       fit_aci_id21[[2]][4,1],
+                       fit_aci_id21[[2]][4,2],
+                       fit_aci_id21$RMSE,
+                       fit_aci_id21$Ci_transition,
+                       fit_aci_id21$citransition,
+                       fit_aci_id21$Km,
+                       fit_aci_id21$GammaStar,
+                       fit_aci_id21$fitmethod,
+                       fit_aci_id21$Tcorrect,
+                       fit_aci_id21$fitTPU)
+colnames(aci_id21_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id21_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id21_data)
+curve_fits_TPU_t4 
+############################################################################################################
+
+###################### plant id1 b6_hn_fdd_p6  ################################################################
+##########################################################################################################
+table(Aci_t4$id)
+
+aci_id22 = subset(Aci_t4, id=="b6_hn_fdd_p6_Repeat")
+nrow(aci_id22)
+aci_id22[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id22)
+################## cleaning #####################
+cut <- which(aci_id22$Ci>500)
+cut
+aci_id22_cut <- aci_id22[-cut,]
+aci_id22_cut
+plot(Adyn ~ Ci, data = aci_id22_cut)
+
+fit_aci_id22 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id22_cut)
+summary(fit_aci_id22)
+coef_id22 <- coef(fit_aci_id22)
+coef_id22
+#### plot
+plot(fit_aci_id22)
+names(aci_id22)
+aci_id22_data <- cbind(aci_id22[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id22[,8]),
+                       mean(aci_id22[,11]),
+                       fit_aci_id22[[2]][1,1],
+                       fit_aci_id22[[2]][1,2],
+                       fit_aci_id22[[2]][2,1],
+                       fit_aci_id22[[2]][2,2],
+                       fit_aci_id22[[2]][3,1],
+                       fit_aci_id22[[2]][3,2],
+                       fit_aci_id22[[2]][4,1],
+                       fit_aci_id22[[2]][4,2],
+                       fit_aci_id22$RMSE,
+                       fit_aci_id22$Ci_transition,
+                       fit_aci_id22$citransition,
+                       fit_aci_id22$Km,
+                       fit_aci_id22$GammaStar,
+                       fit_aci_id22$fitmethod,
+                       fit_aci_id22$Tcorrect,
+                       fit_aci_id22$fitTPU)
+colnames(aci_id22_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id22_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id22_data)
+curve_fits_TPU_t4 
+############################################################################################################
+
+###################### plant id1 b6_hn_fdd_p7  ################################################################
+##########################################################################################################
+table(Aci_t4$id)
+
+aci_id23 = subset(Aci_t4, id=="b6_hn_fdd_p7_repeat")
+nrow(aci_id23)
+aci_id23[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id23)
+
+################## cleaning #####################
+cut <- which(aci_id23$Ci>450)
+cut
+aci_id23_cut <- aci_id23[-cut,]
+aci_id23_cut
+plot(Adyn ~ Ci, data = aci_id23_cut)
+
+fit_aci_id23 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id23_cut)
+summary(fit_aci_id23)
+coef_id23 <- coef(fit_aci_id23)
+coef_id23
+#### plot
+plot(fit_aci_id23)
+names(aci_id23)
+aci_id23_data <- cbind(aci_id23[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id23[,8]),
+                       mean(aci_id23[,11]),
+                       fit_aci_id23[[2]][1,1],
+                       fit_aci_id23[[2]][1,2],
+                       fit_aci_id23[[2]][2,1],
+                       fit_aci_id23[[2]][2,2],
+                       fit_aci_id23[[2]][3,1],
+                       fit_aci_id23[[2]][3,2],
+                       fit_aci_id23[[2]][4,1],
+                       fit_aci_id23[[2]][4,2],
+                       fit_aci_id23$RMSE,
+                       fit_aci_id23$Ci_transition,
+                       fit_aci_id23$citransition,
+                       fit_aci_id23$Km,
+                       fit_aci_id23$GammaStar,
+                       fit_aci_id23$fitmethod,
+                       fit_aci_id23$Tcorrect,
+                       fit_aci_id23$fitTPU)
+colnames(aci_id23_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id23_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id23_data)
+curve_fits_TPU_t4 
+############################################################################################################
+
+
+###################### plant id1 b6_hn_fdd_p8: abnormal low A ################################################################
+##########################################################################################################
+table(Aci_t4$id)
+
+aci_id24 = subset(Aci_t4, id=="b6_hn_fdd_p8")
+nrow(aci_id24)
+aci_id24[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id24)
+
+fit_aci_id24 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id24)
+summary(fit_aci_id24)
+coef_id24 <- coef(fit_aci_id24)
+coef_id24
+#### plot
+plot(fit_aci_id24)
+names(aci_id24)
+aci_id24_data <- cbind(aci_id24[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id24[,8]),
+                       mean(aci_id24[,11]),
+                       fit_aci_id24[[2]][1,1],
+                       fit_aci_id24[[2]][1,2],
+                       fit_aci_id24[[2]][2,1],
+                       fit_aci_id24[[2]][2,2],
+                       fit_aci_id24[[2]][3,1],
+                       fit_aci_id24[[2]][3,2],
+                       fit_aci_id24[[2]][4,1],
+                       fit_aci_id24[[2]][4,2],
+                       fit_aci_id24$RMSE,
+                       fit_aci_id24$Ci_transition,
+                       fit_aci_id24$citransition,
+                       fit_aci_id24$Km,
+                       fit_aci_id24$GammaStar,
+                       fit_aci_id24$fitmethod,
+                       fit_aci_id24$Tcorrect,
+                       fit_aci_id24$fitTPU)
+colnames(aci_id24_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id24_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id24_data)
+curve_fits_TPU_t4
+############################################################################################################
+########## plot all HN B6 curves 
+plot(Adyn ~ Ci, data = aci_id17, ylim = c(0, 60))
+points(Adyn ~ Ci, data = aci_id18, col = "red")  
+points(Adyn ~ Ci, data = aci_id19, col = "blue")# P3 Abnormal low A 
+points(Adyn ~ Ci, data = aci_id20, col = "darkgreen") 
+points(Adyn ~ Ci, data = aci_id21, col = "grey") 
+points(Adyn ~ Ci, data = aci_id22, col = "pink")
+points(Adyn ~ Ci, data = aci_id23, col = "green") 
+points(Adyn ~ Ci, data = aci_id24, col = "cyan")# P8 Abnormal low A 
+
+###################### plant id1 b7_ln_ww_p1: Abnormal A and very high Vcmax, excluded. there is a problem with this curve ################################################################
+##########################################################################################################
+
+aci_id25 = subset(Aci_t4, id=="b7_ln_ww_p1")
+nrow(aci_id25)
+aci_id25[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id25)
+
+fit_aci_id25 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id25)
+summary(fit_aci_id25)
+coef_id25 <- coef(fit_aci_id25)
+coef_id25
+#### plot
+plot(fit_aci_id25)
+names(aci_id25)
+aci_id25_data <- cbind(aci_id25[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id25[,8]),
+                       mean(aci_id25[,11]),
+                       fit_aci_id25[[2]][1,1],
+                       fit_aci_id25[[2]][1,2],
+                       fit_aci_id25[[2]][2,1],
+                       fit_aci_id25[[2]][2,2],
+                       fit_aci_id25[[2]][3,1],
+                       fit_aci_id25[[2]][3,2],
+                       fit_aci_id25[[2]][4,1],
+                       fit_aci_id25[[2]][4,2],
+                       fit_aci_id25$RMSE,
+                       fit_aci_id25$Ci_transition,
+                       fit_aci_id25$citransition,
+                       fit_aci_id25$Km,
+                       fit_aci_id25$GammaStar,
+                       fit_aci_id25$fitmethod,
+                       fit_aci_id25$Tcorrect,
+                       fit_aci_id25$fitTPU)
+colnames(aci_id25_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id25_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id25_data)
+curve_fits_TPU_t4
+############################################################################################################
+
+
+###################### plant id1 b7_ln_ww_p2: ################################################################
+##########################################################################################################
+table(Aci_t4$id)
+
+aci_id26 = subset(Aci_t4, id=="b7_ln_ww_p2")
+nrow(aci_id26)
+aci_id26[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id26)
+
+fit_aci_id26 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id26)
+summary(fit_aci_id26)
+coef_id26 <- coef(fit_aci_id26)
+coef_id26
+#### plot
+plot(fit_aci_id26)
+names(aci_id26)
+aci_id26_data <- cbind(aci_id26[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id26[,8]),
+                       mean(aci_id26[,11]),
+                       fit_aci_id26[[2]][1,1],
+                       fit_aci_id26[[2]][1,2],
+                       fit_aci_id26[[2]][2,1],
+                       fit_aci_id26[[2]][2,2],
+                       fit_aci_id26[[2]][3,1],
+                       fit_aci_id26[[2]][3,2],
+                       fit_aci_id26[[2]][4,1],
+                       fit_aci_id26[[2]][4,2],
+                       fit_aci_id26$RMSE,
+                       fit_aci_id26$Ci_transition,
+                       fit_aci_id26$citransition,
+                       fit_aci_id26$Km,
+                       fit_aci_id26$GammaStar,
+                       fit_aci_id26$fitmethod,
+                       fit_aci_id26$Tcorrect,
+                       fit_aci_id26$fitTPU)
+colnames(aci_id26_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id26_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id26_data)
+curve_fits_TPU_t4 
+############################################################################################################
+
+###################### plant id1 b7_ln_ww_p3: ################################################################
+##########################################################################################################
+table(Aci_t4$id)
+
+aci_id27 = subset(Aci_t4, id=="b7_ln_ww_p3")
+nrow(aci_id27)
+aci_id27[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id27)
+
+fit_aci_id27 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id27)
+summary(fit_aci_id27)
+coef_id27<- coef(fit_aci_id27)
+coef_id27
+#### plot
+plot(fit_aci_id27)
+names(aci_id27)
+aci_id27_data <- cbind(aci_id27[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id27[,8]),
+                       mean(aci_id27[,11]),
+                       fit_aci_id27[[2]][1,1],
+                       fit_aci_id27[[2]][1,2],
+                       fit_aci_id27[[2]][2,1],
+                       fit_aci_id27[[2]][2,2],
+                       fit_aci_id27[[2]][3,1],
+                       fit_aci_id27[[2]][3,2],
+                       fit_aci_id27[[2]][4,1],
+                       fit_aci_id27[[2]][4,2],
+                       fit_aci_id27$RMSE,
+                       fit_aci_id27$Ci_transition,
+                       fit_aci_id27$citransition,
+                       fit_aci_id27$Km,
+                       fit_aci_id27$GammaStar,
+                       fit_aci_id27$fitmethod,
+                       fit_aci_id27$Tcorrect,
+                       fit_aci_id27$fitTPU)
+colnames(aci_id27_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id27_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id27_data)
+curve_fits_TPU_t4 
+############################################################################################################
+
+
+###################### plant id1 b7_ln_ww_p4 ################################################################
+##########################################################################################################
+table(Aci_t4$id)
+
+aci_id28 = subset(Aci_t4, id=="b7_ln_ww_p4")
+nrow(aci_id28)
+aci_id28[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id28)
+
+fit_aci_id28 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id28)
+summary(fit_aci_id28)
+coef_id28<- coef(fit_aci_id28)
+coef_id28
+#### plot
+plot(fit_aci_id28)
+names(aci_id28)
+aci_id28_data <- cbind(aci_id28[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id28[,8]),
+                       mean(aci_id28[,11]),
+                       fit_aci_id28[[2]][1,1],
+                       fit_aci_id28[[2]][1,2],
+                       fit_aci_id28[[2]][2,1],
+                       fit_aci_id28[[2]][2,2],
+                       fit_aci_id28[[2]][3,1],
+                       fit_aci_id28[[2]][3,2],
+                       fit_aci_id28[[2]][4,1],
+                       fit_aci_id28[[2]][4,2],
+                       fit_aci_id28$RMSE,
+                       fit_aci_id28$Ci_transition,
+                       fit_aci_id28$citransition,
+                       fit_aci_id28$Km,
+                       fit_aci_id28$GammaStar,
+                       fit_aci_id28$fitmethod,
+                       fit_aci_id28$Tcorrect,
+                       fit_aci_id28$fitTPU)
+colnames(aci_id28_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id28_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id28_data)
+curve_fits_TPU_t4
+############################################################################################################
+
+
+###################### plant id1 b7_ln_ww_p5:################################################################
+###################################################################################
+table(Aci_t4$id)
+
+aci_id29 = subset(Aci_t4, id=="b7_ln_ww_p5")
+nrow(aci_id29)
+aci_id29[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id29)
+
+fit_aci_id29 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id29)
+summary(fit_aci_id29)
+coef_id29<- coef(fit_aci_id29)
+coef_id29
+#### plot
+plot(fit_aci_id29)
+names(aci_id29)
+aci_id29_data <- cbind(aci_id29[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id29[,8]),
+                       mean(aci_id29[,11]),
+                       fit_aci_id29[[2]][1,1],
+                       fit_aci_id29[[2]][1,2],
+                       fit_aci_id29[[2]][2,1],
+                       fit_aci_id29[[2]][2,2],
+                       fit_aci_id29[[2]][3,1],
+                       fit_aci_id29[[2]][3,2],
+                       fit_aci_id29[[2]][4,1],
+                       fit_aci_id29[[2]][4,2],
+                       fit_aci_id29$RMSE,
+                       fit_aci_id29$Ci_transition,
+                       fit_aci_id29$citransition,
+                       fit_aci_id29$Km,
+                       fit_aci_id29$GammaStar,
+                       fit_aci_id29$fitmethod,
+                       fit_aci_id29$Tcorrect,
+                       fit_aci_id29$fitTPU)
+colnames(aci_id29_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id29_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id29_data)
+curve_fits_TPU_t4
+############################################################################################################
+
+
+###################### plant id1 b7_ln_ww_p6: not terrible  ################################################################
+####################################################################################
+table(Aci_t4$id)
+
+aci_id30 = subset(Aci_t4, id=="b7_ln_ww_p6")
+nrow(aci_id30)
+aci_id30[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id30)
+
+fit_aci_id30 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id30)
+summary(fit_aci_id30)
+coef_id30 <- coef(fit_aci_id30)
+coef_id30
+#### plot
+plot(fit_aci_id30)
+names(aci_id30)
+aci_id30_data <- cbind(aci_id30[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id30[,8]),
+                       mean(aci_id30[,11]),
+                       fit_aci_id30[[2]][1,1],
+                       fit_aci_id30[[2]][1,2],
+                       fit_aci_id30[[2]][2,1],
+                       fit_aci_id30[[2]][2,2],
+                       fit_aci_id30[[2]][3,1],
+                       fit_aci_id30[[2]][3,2],
+                       fit_aci_id30[[2]][4,1],
+                       fit_aci_id30[[2]][4,2],
+                       fit_aci_id30$RMSE,
+                       fit_aci_id30$Ci_transition,
+                       fit_aci_id30$citransition,
+                       fit_aci_id30$Km,
+                       fit_aci_id30$GammaStar,
+                       fit_aci_id30$fitmethod,
+                       fit_aci_id30$Tcorrect,
+                       fit_aci_id30$fitTPU)
+colnames(aci_id30_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id30_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id30_data)
+curve_fits_TPU_t4 
+############################################################################################################
+
+###################### plant id1 b7_ln_ww_p7 ################################################################
+####################################################################################
+table(Aci_t4$id)
+
+aci_id31 = subset(Aci_t4, id=="b7_ln_ww_p7")
+nrow(aci_id31)
+aci_id31[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id31)
+
+fit_aci_id31 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id31)
+summary(fit_aci_id31)
+coef_id31 <- coef(fit_aci_id31)
+coef_id31
+#### plot
+plot(fit_aci_id31)
+names(aci_id31)
+aci_id31_data <- cbind(aci_id31[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id31[,8]),
+                       mean(aci_id31[,11]),
+                       fit_aci_id31[[2]][1,1],
+                       fit_aci_id31[[2]][1,2],
+                       fit_aci_id31[[2]][2,1],
+                       fit_aci_id31[[2]][2,2],
+                       fit_aci_id31[[2]][3,1],
+                       fit_aci_id31[[2]][3,2],
+                       fit_aci_id31[[2]][4,1],
+                       fit_aci_id31[[2]][4,2],
+                       fit_aci_id31$RMSE,
+                       fit_aci_id31$Ci_transition,
+                       fit_aci_id31$citransition,
+                       fit_aci_id31$Km,
+                       fit_aci_id31$GammaStar,
+                       fit_aci_id31$fitmethod,
+                       fit_aci_id31$Tcorrect,
+                       fit_aci_id31$fitTPU)
+colnames(aci_id31_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id31_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id31_data)
+curve_fits_TPU_t4 
+############################################################################################################
+
+###################### plant id1  b7_ln_ww_p8 ###############################################################
+####################################################################################
+table(Aci_t4$id)
+
+aci_id32 = subset(Aci_t4, id=="b7_ln_ww_p8")
+nrow(aci_id32)
+aci_id32[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id32)
+
+fit_aci_id32 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id32)
+summary(fit_aci_id32)
+coef_id32 <- coef(fit_aci_id32)
+coef_id32
+#### plot
+plot(fit_aci_id32)
+names(aci_id32)
+aci_id32_data <- cbind(aci_id32[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id32[,8]),
+                       mean(aci_id32[,11]),
+                       fit_aci_id32[[2]][1,1],
+                       fit_aci_id32[[2]][1,2],
+                       fit_aci_id32[[2]][2,1],
+                       fit_aci_id32[[2]][2,2],
+                       fit_aci_id32[[2]][3,1],
+                       fit_aci_id32[[2]][3,2],
+                       fit_aci_id32[[2]][4,1],
+                       fit_aci_id32[[2]][4,2],
+                       fit_aci_id32$RMSE,
+                       fit_aci_id32$Ci_transition,
+                       fit_aci_id32$citransition,
+                       fit_aci_id32$Km,
+                       fit_aci_id32$GammaStar,
+                       fit_aci_id32$fitmethod,
+                       fit_aci_id32$Tcorrect,
+                       fit_aci_id32$fitTPU)
+colnames(aci_id32_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id32_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id32_data)
+curve_fits_TPU_t4 
+############################################################################################################
+########## plot all LN B7 curves 
+plot(Adyn ~ Ci, data = aci_id25, ylim = c(0, 40))
+points(Adyn ~ Ci, data = aci_id26, col = "red")  
+points(Adyn ~ Ci, data = aci_id27, col = "blue")
+points(Adyn ~ Ci, data = aci_id28, col = "darkgreen") ## abnormaly high
+points(Adyn ~ Ci, data = aci_id29, col = "grey") 
+points(Adyn ~ Ci, data = aci_id30, col = "pink")
+points(Adyn ~ Ci, data = aci_id31, col = "green") 
+points(Adyn ~ Ci, data = aci_id32, col = "cyan")
+
+
+###################### plant id1 b2_ln_spd_p1################################################################
+####################################################################################
+table(Aci_t4$id)
+
+aci_id33 = subset(Aci_t4, id=="b2_ln_spd_p1")
+nrow(aci_id33)
+aci_id33[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id33)
+
+fit_aci_id33 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id33)
+summary(fit_aci_id33)
+coef_id33 <- coef(fit_aci_id33)
+coef_id33
+#### plot
+plot(fit_aci_id33)
+names(aci_id33)
+aci_id33_data <- cbind(aci_id33[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id33[,8]),
+                       mean(aci_id33[,11]),
+                       fit_aci_id33[[2]][1,1],
+                       fit_aci_id33[[2]][1,2],
+                       fit_aci_id33[[2]][2,1],
+                       fit_aci_id33[[2]][2,2],
+                       fit_aci_id33[[2]][3,1],
+                       fit_aci_id33[[2]][3,2],
+                       fit_aci_id33[[2]][4,1],
+                       fit_aci_id33[[2]][4,2],
+                       fit_aci_id33$RMSE,
+                       fit_aci_id33$Ci_transition,
+                       fit_aci_id33$citransition,
+                       fit_aci_id33$Km,
+                       fit_aci_id33$GammaStar,
+                       fit_aci_id33$fitmethod,
+                       fit_aci_id33$Tcorrect,
+                       fit_aci_id33$fitTPU)
+colnames(aci_id33_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id33_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id33_data)
+curve_fits_TPU_t4 
+############################################################################################################
+
+###################### plant id1 b2_ln_spd_p2 ################################################################
+####################################################################################
+table(Aci_t4$id)
+
+aci_id34 = subset(Aci_t4, id=="b2_ln_spd_p2")
+nrow(aci_id34)
+aci_id34[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id34)
+
+fit_aci_id34 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id34)
+summary(fit_aci_id34)
+coef_id34<- coef(fit_aci_id34)
+coef_id34
+#### plot
+plot(fit_aci_id34)
+names(aci_id34)
+aci_id34_data <- cbind(aci_id34[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id34[,8]),
+                       mean(aci_id34[,11]),
+                       fit_aci_id34[[2]][1,1],
+                       fit_aci_id34[[2]][1,2],
+                       fit_aci_id34[[2]][2,1],
+                       fit_aci_id34[[2]][2,2],
+                       fit_aci_id34[[2]][3,1],
+                       fit_aci_id34[[2]][3,2],
+                       fit_aci_id34[[2]][4,1],
+                       fit_aci_id34[[2]][4,2],
+                       fit_aci_id34$RMSE,
+                       fit_aci_id34$Ci_transition,
+                       fit_aci_id34$citransition,
+                       fit_aci_id34$Km,
+                       fit_aci_id34$GammaStar,
+                       fit_aci_id34$fitmethod,
+                       fit_aci_id34$Tcorrect,
+                       fit_aci_id34$fitTPU)
+colnames(aci_id34_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id34_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id34_data)
+curve_fits_TPU_t4
+############################################################################################################
+
+
+##################### plant id1 b2_ln_spd_p3 ################################################################
+####################################################################################
+table(Aci_t4$id)
+
+aci_id35 = subset(Aci_t4, id=="b2_ln_spd_p3")
+nrow(aci_id35)
+aci_id35[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id35)
+
+fit_aci_id35 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id35)
+summary(fit_aci_id35)
+coef_id35<- coef(fit_aci_id35)
+coef_id35
+#### plot
+plot(fit_aci_id35)
+names(aci_id35)
+aci_id35_data <- cbind(aci_id35[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id35[,8]),
+                       mean(aci_id35[,11]),
+                       fit_aci_id35[[2]][1,1],
+                       fit_aci_id35[[2]][1,2],
+                       fit_aci_id35[[2]][2,1],
+                       fit_aci_id35[[2]][2,2],
+                       fit_aci_id35[[2]][3,1],
+                       fit_aci_id35[[2]][3,2],
+                       fit_aci_id35[[2]][4,1],
+                       fit_aci_id35[[2]][4,2],
+                       fit_aci_id35$RMSE,
+                       fit_aci_id35$Ci_transition,
+                       fit_aci_id35$citransition,
+                       fit_aci_id35$Km,
+                       fit_aci_id35$GammaStar,
+                       fit_aci_id35$fitmethod,
+                       fit_aci_id35$Tcorrect,
+                       fit_aci_id35$fitTPU)
+colnames(aci_id35_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id35_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id35_data)
+curve_fits_TPU_t4 
+############################################################################################################
+
+##################### plant id1  b2_ln_spd_p4 ################################################################
+####################################################################################
+table(Aci_t4$id)
+
+aci_id36 = subset(Aci_t4, id=="b2_ln_spd_p4")
+nrow(aci_id36)
+aci_id36[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id36)
+
+fit_aci_id36 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id36)
+summary(fit_aci_id36)
+coef_id36<- coef(fit_aci_id36)
+coef_id36
+#### plot
+plot(fit_aci_id36)
+names(aci_id36)
+aci_id36_data <- cbind(aci_id36[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id36[,8]),
+                       mean(aci_id36[,11]),
+                       fit_aci_id36[[2]][1,1],
+                       fit_aci_id36[[2]][1,2],
+                       fit_aci_id36[[2]][2,1],
+                       fit_aci_id36[[2]][2,2],
+                       fit_aci_id36[[2]][3,1],
+                       fit_aci_id36[[2]][3,2],
+                       fit_aci_id36[[2]][4,1],
+                       fit_aci_id36[[2]][4,2],
+                       fit_aci_id36$RMSE,
+                       fit_aci_id36$Ci_transition,
+                       fit_aci_id36$citransition,
+                       fit_aci_id36$Km,
+                       fit_aci_id36$GammaStar,
+                       fit_aci_id36$fitmethod,
+                       fit_aci_id36$Tcorrect,
+                       fit_aci_id36$fitTPU)
+colnames(aci_id36_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id36_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id36_data)
+curve_fits_TPU_t4 
+############################################################################################################
+
+##################### plant id1  b2_ln_spd_p5  ################################################################
+####################################################################################
+table(Aci_t4$id)
+
+aci_id37 = subset(Aci_t4, id=="b2_ln_spd_p5")
+nrow(aci_id37)
+aci_id37[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id37)
+
+fit_aci_id37 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id37)
+summary(fit_aci_id37)
+coef_id37<- coef(fit_aci_id37)
+coef_id37
+#### plot
+plot(fit_aci_id37)
+names(aci_id37)
+aci_id37_data <- cbind(aci_id37[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id37[,8]),
+                       mean(aci_id37[,11]),
+                       fit_aci_id37[[2]][1,1],
+                       fit_aci_id37[[2]][1,2],
+                       fit_aci_id37[[2]][2,1],
+                       fit_aci_id37[[2]][2,2],
+                       fit_aci_id37[[2]][3,1],
+                       fit_aci_id37[[2]][3,2],
+                       fit_aci_id37[[2]][4,1],
+                       fit_aci_id37[[2]][4,2],
+                       fit_aci_id37$RMSE,
+                       fit_aci_id37$Ci_transition,
+                       fit_aci_id37$citransition,
+                       fit_aci_id37$Km,
+                       fit_aci_id37$GammaStar,
+                       fit_aci_id37$fitmethod,
+                       fit_aci_id37$Tcorrect,
+                       fit_aci_id37$fitTPU)
+colnames(aci_id37_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id37_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id37_data)
+curve_fits_TPU_t4
+############################################################################################################
+
+
+##################### plant id1 b2_ln_spd_p6:  ################################################################
+####################################################################################
+table(Aci_t4$id)
+
+aci_id38 = subset(Aci_t4, id=="b2_ln_spd_p6")
+nrow(aci_id38)
+aci_id38[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id38)
+
+fit_aci_id38 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id38)
+summary(fit_aci_id38)
+coef_id38<- coef(fit_aci_id38)
+coef_id38
+#### plot
+plot(fit_aci_id38)
+names(aci_id38)
+aci_id38_data <- cbind(aci_id38[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id38[,8]),
+                       mean(aci_id38[,11]),
+                       fit_aci_id38[[2]][1,1],
+                       fit_aci_id38[[2]][1,2],
+                       fit_aci_id38[[2]][2,1],
+                       fit_aci_id38[[2]][2,2],
+                       fit_aci_id38[[2]][3,1],
+                       fit_aci_id38[[2]][3,2],
+                       fit_aci_id38[[2]][4,1],
+                       fit_aci_id38[[2]][4,2],
+                       fit_aci_id38$RMSE,
+                       fit_aci_id38$Ci_transition,
+                       fit_aci_id38$citransition,
+                       fit_aci_id38$Km,
+                       fit_aci_id38$GammaStar,
+                       fit_aci_id38$fitmethod,
+                       fit_aci_id38$Tcorrect,
+                       fit_aci_id38$fitTPU)
+colnames(aci_id38_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id38_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id38_data)
+curve_fits_TPU_t4
+############################################################################################################
+
+
+##################### plant id1 b2_ln_spd_p8:  ################################################################
+####################################################################################
+table(Aci_t4$id)
+
+aci_id39 = subset(Aci_t4, id=="b2_ln_spd_p8")
+nrow(aci_id39)
+aci_id39[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id39)
+
+fit_aci_id39 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id39)
+summary(fit_aci_id39)
+coef_id39<- coef(fit_aci_id39)
+coef_id39
+#### plot
+plot(fit_aci_id39)
+names(aci_id38)
+aci_id39_data <- cbind(aci_id39[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id39[,8]),
+                       mean(aci_id39[,11]),
+                       fit_aci_id39[[2]][1,1],
+                       fit_aci_id39[[2]][1,2],
+                       fit_aci_id39[[2]][2,1],
+                       fit_aci_id39[[2]][2,2],
+                       fit_aci_id39[[2]][3,1],
+                       fit_aci_id39[[2]][3,2],
+                       fit_aci_id39[[2]][4,1],
+                       fit_aci_id39[[2]][4,2],
+                       fit_aci_id39$RMSE,
+                       fit_aci_id39$Ci_transition,
+                       fit_aci_id39$citransition,
+                       fit_aci_id39$Km,
+                       fit_aci_id39$GammaStar,
+                       fit_aci_id39$fitmethod,
+                       fit_aci_id39$Tcorrect,
+                       fit_aci_id39$fitTPU)
+colnames(aci_id39_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id39_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id39_data)
+curve_fits_TPU_t4
+############################################################################################################
+
+
+##################### plant id1 b2_ln_spd_p7:  ################################################################
+####################################################################################
+table(Aci_t4$id)
+
+aci_id40 = subset(Aci_t4, id=="b2_ln_spd_p7")
+nrow(aci_id40)
+aci_id40[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id40)
+
+fit_aci_id40 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id40)
+summary(fit_aci_id40)
+coef_id40<- coef(fit_aci_id40)
+coef_id40
+#### plot
+plot(fit_aci_id40)
+names(aci_id40)
+aci_id40_data <- cbind(aci_id40[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id40[,8]),
+                       mean(aci_id40[,11]),
+                       fit_aci_id40[[2]][1,1],
+                       fit_aci_id40[[2]][1,2],
+                       fit_aci_id40[[2]][2,1],
+                       fit_aci_id40[[2]][2,2],
+                       fit_aci_id40[[2]][3,1],
+                       fit_aci_id40[[2]][3,2],
+                       fit_aci_id40[[2]][4,1],
+                       fit_aci_id40[[2]][4,2],
+                       fit_aci_id40$RMSE,
+                       fit_aci_id40$Ci_transition,
+                       fit_aci_id40$citransition,
+                       fit_aci_id40$Km,
+                       fit_aci_id40$GammaStar,
+                       fit_aci_id40$fitmethod,
+                       fit_aci_id40$Tcorrect,
+                       fit_aci_id40$fitTPU)
+colnames(aci_id40_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id40_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id40_data)
+curve_fits_TPU_t4 
+############################################################################################################
+
+########## plot all LN B2 curves 
+plot(Adyn ~ Ci, data = aci_id33, ylim = c(0, 40))
+points(Adyn ~ Ci, data = aci_id34, col = "red")  
+points(Adyn ~ Ci, data = aci_id35, col = "blue")
+points(Adyn ~ Ci, data = aci_id36, col = "darkgreen") 
+points(Adyn ~ Ci, data = aci_id37, col = "grey") 
+points(Adyn ~ Ci, data = aci_id38, col = "pink")
+points(Adyn ~ Ci, data = aci_id39, col = "green") 
+points(Adyn ~ Ci, data = aci_id40, col = "cyan") 
+
+
+##################### plant id1 b3_ln_fdd_p1:  ################################################################
+####################################################################################
+table(Aci_t4$id)
+
+aci_id41 = subset(Aci_t4, id=="b3_ln_fdd_p1")
+nrow(aci_id41)
+aci_id41[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id41)
+
+fit_aci_id41 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id41)
+summary(fit_aci_id41)
+coef_id41<- coef(fit_aci_id41)
+coef_id41
+#### plot
+plot(fit_aci_id41)
+names(aci_id41)
+aci_id41_data <- cbind(aci_id41[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id41[,8]),
+                       mean(aci_id41[,11]),
+                       fit_aci_id41[[2]][1,1],
+                       fit_aci_id41[[2]][1,2],
+                       fit_aci_id41[[2]][2,1],
+                       fit_aci_id41[[2]][2,2],
+                       fit_aci_id41[[2]][3,1],
+                       fit_aci_id41[[2]][3,2],
+                       fit_aci_id41[[2]][4,1],
+                       fit_aci_id41[[2]][4,2],
+                       fit_aci_id41$RMSE,
+                       fit_aci_id41$Ci_transition,
+                       fit_aci_id41$citransition,
+                       fit_aci_id41$Km,
+                       fit_aci_id41$GammaStar,
+                       fit_aci_id41$fitmethod,
+                       fit_aci_id41$Tcorrect,
+                       fit_aci_id41$fitTPU)
+colnames(aci_id41_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id41_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id41_data)
+curve_fits_TPU_t4 
+############################################################################################################
+
+##################### plant id1 b3_ln_fdd_p2:  ################################################################
+####################################################################################
+table(Aci_t4$id)
+
+aci_id42 = subset(Aci_t4, id=="b3_ln_fdd_p2")
+nrow(aci_id42)
+aci_id42[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id42)
+
+fit_aci_id42 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id42)
+summary(fit_aci_id42)
+coef_id42<- coef(fit_aci_id42)
+coef_id42
+#### plot
+plot(fit_aci_id42)
+names(aci_id42)
+aci_id42_data <- cbind(aci_id42[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id42[,8]),
+                       mean(aci_id42[,11]),
+                       fit_aci_id42[[2]][1,1],
+                       fit_aci_id42[[2]][1,2],
+                       fit_aci_id42[[2]][2,1],
+                       fit_aci_id42[[2]][2,2],
+                       fit_aci_id42[[2]][3,1],
+                       fit_aci_id42[[2]][3,2],
+                       fit_aci_id42[[2]][4,1],
+                       fit_aci_id42[[2]][4,2],
+                       fit_aci_id42$RMSE,
+                       fit_aci_id42$Ci_transition,
+                       fit_aci_id42$citransition,
+                       fit_aci_id42$Km,
+                       fit_aci_id42$GammaStar,
+                       fit_aci_id42$fitmethod,
+                       fit_aci_id42$Tcorrect,
+                       fit_aci_id42$fitTPU)
+colnames(aci_id42_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id42_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id42_data)
+curve_fits_TPU_t4 
+############################################################################################################
+
+
+##################### plant id1 b3_ln_fdd_p3:  ################################################################
+####################################################################################
+table(Aci_t4$id)
+
+aci_id43 = subset(Aci_t4, id=="b3_ln_fdd_p3")
+nrow(aci_id43)
+aci_id43[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id43)
+
+fit_aci_id43 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id43)
+summary(fit_aci_id43)
+coef_id43<- coef(fit_aci_id43)
+coef_id43
+#### plot
+plot(fit_aci_id43)
+names(aci_id43)
+aci_id43_data <- cbind(aci_id43[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id43[,8]),
+                       mean(aci_id43[,11]),
+                       fit_aci_id43[[2]][1,1],
+                       fit_aci_id43[[2]][1,2],
+                       fit_aci_id43[[2]][2,1],
+                       fit_aci_id43[[2]][2,2],
+                       fit_aci_id43[[2]][3,1],
+                       fit_aci_id43[[2]][3,2],
+                       fit_aci_id43[[2]][4,1],
+                       fit_aci_id43[[2]][4,2],
+                       fit_aci_id43$RMSE,
+                       fit_aci_id43$Ci_transition,
+                       fit_aci_id43$citransition,
+                       fit_aci_id43$Km,
+                       fit_aci_id43$GammaStar,
+                       fit_aci_id43$fitmethod,
+                       fit_aci_id43$Tcorrect,
+                       fit_aci_id43$fitTPU)
+colnames(aci_id43_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id43_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id43_data)
+curve_fits_TPU_t4
+############################################################################################################
+
+##################### plant id1 b3_ln_fdd_p4:  ################################################################
+####################################################################################
+table(Aci_t4$id)
+
+aci_id44 = subset(Aci_t4, id=="b3_ln_fdd_p4")
+nrow(aci_id44)
+aci_id44[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id44)
+
+fit_aci_id44 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id44)
+summary(fit_aci_id44)
+coef_id44<- coef(fit_aci_id44)
+coef_id44
+#### plot
+plot(fit_aci_id44)
+names(aci_id44)
+aci_id44_data <- cbind(aci_id44[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id44[,8]),
+                       mean(aci_id44[,11]),
+                       fit_aci_id44[[2]][1,1],
+                       fit_aci_id44[[2]][1,2],
+                       fit_aci_id44[[2]][2,1],
+                       fit_aci_id44[[2]][2,2],
+                       fit_aci_id44[[2]][3,1],
+                       fit_aci_id44[[2]][3,2],
+                       fit_aci_id44[[2]][4,1],
+                       fit_aci_id44[[2]][4,2],
+                       fit_aci_id44$RMSE,
+                       fit_aci_id44$Ci_transition,
+                       fit_aci_id44$citransition,
+                       fit_aci_id44$Km,
+                       fit_aci_id44$GammaStar,
+                       fit_aci_id44$fitmethod,
+                       fit_aci_id44$Tcorrect,
+                       fit_aci_id44$fitTPU)
+colnames(aci_id44_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id44_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id44_data)
+curve_fits_TPU_t4 
+############################################################################################################
+
+
+##################### plant id1 b3_ln_fdd_p5:  ################################################################
+####################################################################################
+table(Aci_t4$id)
+
+aci_id45 = subset(Aci_t4, id=="b3_ln_fdd_p5")
+nrow(aci_id45)
+aci_id45[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id45)
+
+fit_aci_id45 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id45)
+summary(fit_aci_id45)
+coef_id45<- coef(fit_aci_id45)
+coef_id45
+#### plot
+plot(fit_aci_id45)
+names(aci_id45)
+aci_id45_data <- cbind(aci_id45[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id45[,8]),
+                       mean(aci_id45[,11]),
+                       fit_aci_id45[[2]][1,1],
+                       fit_aci_id45[[2]][1,2],
+                       fit_aci_id45[[2]][2,1],
+                       fit_aci_id45[[2]][2,2],
+                       fit_aci_id45[[2]][3,1],
+                       fit_aci_id45[[2]][3,2],
+                       fit_aci_id45[[2]][4,1],
+                       fit_aci_id45[[2]][4,2],
+                       fit_aci_id45$RMSE,
+                       fit_aci_id45$Ci_transition,
+                       fit_aci_id45$citransition,
+                       fit_aci_id45$Km,
+                       fit_aci_id45$GammaStar,
+                       fit_aci_id45$fitmethod,
+                       fit_aci_id45$Tcorrect,
+                       fit_aci_id45$fitTPU)
+colnames(aci_id45_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id45_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id45_data)
+curve_fits_TPU_t4 
+############################################################################################################
+
+
+##################### plant id1 b3_ln_fdd_p6:  ################################################################
+####################################################################################
+table(Aci_t4$id)
+
+aci_id46 = subset(Aci_t4, id=="b3_ln_fdd_p6")
+nrow(aci_id46)
+aci_id46[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id46)
+
+fit_aci_id46 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id46)
+summary(fit_aci_id46)
+coef_id46<- coef(fit_aci_id46)
+coef_id46
+#### plot
+plot(fit_aci_id46)
+names(aci_id46)
+aci_id46_data <- cbind(aci_id46[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id46[,8]),
+                       mean(aci_id46[,11]),
+                       fit_aci_id46[[2]][1,1],
+                       fit_aci_id46[[2]][1,2],
+                       fit_aci_id46[[2]][2,1],
+                       fit_aci_id46[[2]][2,2],
+                       fit_aci_id46[[2]][3,1],
+                       fit_aci_id46[[2]][3,2],
+                       fit_aci_id46[[2]][4,1],
+                       fit_aci_id46[[2]][4,2],
+                       fit_aci_id46$RMSE,
+                       fit_aci_id46$Ci_transition,
+                       fit_aci_id46$citransition,
+                       fit_aci_id46$Km,
+                       fit_aci_id46$GammaStar,
+                       fit_aci_id46$fitmethod,
+                       fit_aci_id46$Tcorrect,
+                       fit_aci_id46$fitTPU)
+colnames(aci_id46_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id46_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id46_data)
+curve_fits_TPU_t4
+############################################################################################################
+
+##################### plant id1 b3_ln_fdd_p7:  ################################################################
+####################################################################################
+table(Aci_t4$id)
+
+aci_id47 = subset(Aci_t4, id=="b3_ln_fdd_p7")
+nrow(aci_id47)
+aci_id47[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id47)
+
+fit_aci_id47 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id47)
+summary(fit_aci_id47)
+coef_id47<- coef(fit_aci_id47)
+coef_id47
+#### plot
+plot(fit_aci_id47)
+names(aci_id47)
+aci_id47_data <- cbind(aci_id47[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id47[,8]),
+                       mean(aci_id47[,11]),
+                       fit_aci_id47[[2]][1,1],
+                       fit_aci_id47[[2]][1,2],
+                       fit_aci_id47[[2]][2,1],
+                       fit_aci_id47[[2]][2,2],
+                       fit_aci_id47[[2]][3,1],
+                       fit_aci_id47[[2]][3,2],
+                       fit_aci_id47[[2]][4,1],
+                       fit_aci_id47[[2]][4,2],
+                       fit_aci_id47$RMSE,
+                       fit_aci_id47$Ci_transition,
+                       fit_aci_id47$citransition,
+                       fit_aci_id47$Km,
+                       fit_aci_id47$GammaStar,
+                       fit_aci_id47$fitmethod,
+                       fit_aci_id47$Tcorrect,
+                       fit_aci_id47$fitTPU)
+colnames(aci_id47_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id47_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id47_data)
+curve_fits_TPU_t4
+############################################################################################################
+
+
+##################### plant id1 b3_ln_fdd_p8:  ################################################################
+####################################################################################
+table(Aci_t4$id)
+
+aci_id48 = subset(Aci_t4, id=="b3_ln_fdd_p8")
+nrow(aci_id48)
+aci_id48[, c(1:2)]
+
+#### plot raw data and remove values if needed
+plot(Adyn ~ Ci, data = aci_id48)
+
+fit_aci_id48 = fitaci(varnames = list(ALEAF = 'Adyn', Tleaf = "Tleaf", Ci = "Ci", PPFD = "Qin"),
+                      # citransition = 300,
+                      useRd = FALSE,
+                      Tcorrect = FALSE,
+                      fitTPU = TRUE,
+                      fitmethod = 'bilinear',
+                      data = aci_id48)
+summary(fit_aci_id48)
+coef_id48<- coef(fit_aci_id48)
+coef_id48
+#### plot
+plot(fit_aci_id48)
+names(aci_id48)
+aci_id48_data <- cbind(aci_id48[1, c(1, 2, 4, 6, 7)],
+                       mean(aci_id48[,8]),
+                       mean(aci_id48[,11]),
+                       fit_aci_id48[[2]][1,1],
+                       fit_aci_id48[[2]][1,2],
+                       fit_aci_id48[[2]][2,1],
+                       fit_aci_id48[[2]][2,2],
+                       fit_aci_id48[[2]][3,1],
+                       fit_aci_id48[[2]][3,2],
+                       fit_aci_id48[[2]][4,1],
+                       fit_aci_id48[[2]][4,2],
+                       fit_aci_id48$RMSE,
+                       fit_aci_id48$Ci_transition,
+                       fit_aci_id48$citransition,
+                       fit_aci_id48$Km,
+                       fit_aci_id48$GammaStar,
+                       fit_aci_id48$fitmethod,
+                       fit_aci_id48$Tcorrect,
+                       fit_aci_id48$fitTPU)
+colnames(aci_id48_data) <- c('id', 'machine','anet_420', 'ci_420', 'gs_420',
+                             'vpd_leaf', 'temperature_leaf', 'vcmax_tleaf', 'vcmax_tleaf_se',
+                             'jmax_tleaf', 'jmax_tleaf_se', 'rd_tleaf', 'rd_tleaf_se','TPU', 'TPU_se',
+                             'aci_RMSE', 'aci_ci_transistion', 'aci_ci_transition_set',
+                             'aci_km', 'aci_gammastar', 'aci_fitmethod',
+                             'aci_tcorrect', 'aci_fittpu')
+aci_id48_data
+curve_fits_TPU_t4 <- rbind(curve_fits_TPU_t4, aci_id48_data)
+curve_fits_TPU_t4 
+############################################################################################################
+
+########## plot all LN B3 curves 
+plot(Adyn ~ Ci, data = aci_id41, ylim = c(0, 40))
+points(Adyn ~ Ci, data = aci_id42, col = "red")  
+points(Adyn ~ Ci, data = aci_id43, col = "blue")
+points(Adyn ~ Ci, data = aci_id44, col = "darkgreen") 
+points(Adyn ~ Ci, data = aci_id45, col = "grey") 
+points(Adyn ~ Ci, data = aci_id46, col = "pink")
+points(Adyn ~ Ci, data = aci_id47, col = "green") 
+points(Adyn ~ Ci, data = aci_id48, col = "cyan")
+
+nrow(curve_fits_TPU_t4) 
+names(curve_fits_TPU_t4)
+table(curve_fits_TPU_t4$id)
+
+old_name_b6_p6 <- "b6_hn_fdd_p6_Repeat"
+new_name_b6_p6 <- "b6_hn_fdd_p6"
+
+old_name_b6_p7 <- "b6_hn_fdd_p7_repeat"
+new_name_b6_p7 <- "b6_hn_fdd_p7"
+
+curve_fits_TPU_t4$id <- sub(old_name_b6_p6, new_name_b6_p6, curve_fits_TPU_t4$id)
+curve_fits_TPU_t4$id <- sub(old_name_b6_p7, new_name_b6_p7, curve_fits_TPU_t4$id)
+
+names(curve_fits_TPU_t4)
+### separation plant, nitrogen treatment, block #
+curve_fits_TPU_t4_clean <- curve_fits_TPU_t4
+
+curve_fits_TPU_t4_clean <- separate(curve_fits_TPU_t4_clean, col = id, into=c("block", "n_trt", "Drought_trt", "plant_id"), sep= "_", remove=FALSE)
+view(curve_fits_TPU_t4_clean) # Verification 
+write.csv(curve_fits_TPU_t4_clean, "../output/curve_fits_TPU_t4_clean.csv")
+# Remove duplicates 
+curve_fits_TPU_t4_clean <- curve_fits_TPU_t4_clean[!duplicated(curve_fits_TPU_t4_clean), ]
+nrow(curve_fits_TPU_t4_clean) #48
+names(curve_fits_TPU_t4_clean)
+
+curve_fits_TPU_t4_clean$time <- "t4"
+
+curve_fits_TPU_t4_selected <- curve_fits_TPU_t4_clean %>%
+  select(time,n_trt,Drought_trt,plant_id, vcmax_tleaf, anet_420,ci_420,
+    gs_420,vpd_leaf,temperature_leaf,aci_RMSE)
+
+names(curve_fits_TPU_t4_selected)

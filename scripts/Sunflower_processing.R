@@ -1,7 +1,4 @@
 
-##################### packages ##############################
-install.packages("LeafArea")
-install.packages("rJava")
 ###############################################################################
 ## Libraries
 ###############################################################################
@@ -10,196 +7,135 @@ library(tidyverse)
 library(LeafArea)
 library(rJava)
 
+ij.path <- "../ImageJ/"
+imagepath.disk <- "../input/leaves_scan/leaves_disk/" # 10 disks per plant at three time points 
+imagepath.leaves <- "../input/leaves_scan/leaves/" ## 3-8 leaves per plant at the end of the experiment 
 
-###############################################################################
-## Load data : leaves area and leaves disks 
-###############################################################################
-leaves_area <- read.csv("../input/leaves_area.csv")
-leaves_disk <- read.csv("../input/leaves_disk.csv")
-nb_disk_plant_time <- read.csv("../input/nb_disk_plant_time.csv")
+leaves_disk <- run.ij(path.imagej = ij.path,
+                      set.directory = imagepath.disk,
+                      distance.pixel = 118,
+                      known.distance = 1, low.size = 0.01)
+view(leaves_disk)
 
-####################### open files: Join to the file containing the number and biomass of disks for each plant, trt and time: nb_disk_plant_time ###################### 
-## In this file the biomass is for the dried disks  after removing the fresh ones for chlorophyll measurements ######
-## Except time 1: there was no chlorophyll measurements, the biomass is for all disks 
+leaves_area <- run.ij(path.imagej = ij.path,
+                      set.directory = imagepath.leaves,
+                      distance.pixel = 118,
+                      known.distance = 1, low.size = 0.01)
 
-nb_disk_plant_time$plant <- as.character(nb_disk_plant_time$plant)
-leaves_disk$plant <- as.character(leaves_disk$plant)
+view(leaves_area)
 
-leaves_disk_area_chl = left_join(nb_disk_plant_time,leaves_disk, by = c("ID_trt", "n_trt", "drought", "plant", "time" )) 
-names(leaves_disk_area_chl)
-leaves_disk_area_chl$total.leaf.area
 
-#### approximation to deduce the total.leaf area for time 1 since the disks were not scanned by error
-# Calculate the mean of other times when disks == 10
-subset_data <- subset(leaves_disk_area_chl, nb_disks_scanned == 10)
-nrow(subset_data)#121
-mean_value_leaf_area <- mean(subset_data$total.leaf.area, na.rm = TRUE) # 6.265537
+leaves_disk <- separate(leaves_disk, col = sample, into=c("ID_trt", "n_trt", "Drought_trt", "plant_id", "time", "type"), sep= "_", remove=FALSE)
+view(leaves_disk) # Verification 
+names(leaves_disk)
 
-######## calculate the surface of leaves disks at t1 depending on their numbers based on the mean leaf area value for 10 disks
-leaves_disk_area_chl$total.leaf.area[leaves_disk_area_chl$time == "t1"] <- 
-  mean_value_leaf_area *leaves_disk_area_chl$nb_disks_scanned[leaves_disk_area_chl$time == "t1"]/10 
+leaves_area <- separate(leaves_area, col = sample, into=c("ID_trt", "n_trt", "Drought_trt", "plant_id", "leaf"), sep= "_", remove=FALSE)
+view(leaves_area) # Verification 
+names(leaves_area)
 
-#### four disks used to chl extraction: calculate the surface of 4 disks
-leaves_disk_area_chl$chl_disk_leaf_area =(leaves_disk_area_chl$total.leaf.area*leaves_disk_area_chl$nb_disks_chlorophyll)/leaves_disk_area_chl$nb_disks_scanned 
-names(leaves_disk_area_chl)
-nrow(leaves_disk_area_chl)
+leaves_disk$ID_trt = NULL # remove the ID_trt, it is not useful
+leaves_disk$sample = NULL # remove the samples, it is not useful anymore
+leaves_disk$plant_id<- tolower(leaves_disk$plant_id) # make capital P small p
+leaves_disk$type= NULL # remove the type, it is not useful anymore
+names(leaves_disk)[names(leaves_disk) == "total.leaf.area"] <- "leaves_disk_area"  # rename total.leaf.area"
+
+
+leaves_area$ID_trt = NULL # remove the ID_trt, it is not useful
+leaves_area$sample = NULL # remove the samples, it is not useful anymore
+leaves_area$plant_id <- tolower(leaves_area$plant_id) # make capital P small p
+leaves_area$type= NULL # remove the type, it is not useful anymore
+
+aggregate(leaf ~ plant_id + n_trt + Drought_trt,
+          data = leaves_area,
+          FUN = function(x) sum(!is.na(x)))
+names(leaves_area)
+
+####################### calculate the leaf area for disks used to measure nitrogen and C isotopes####################
+####################################################################################################################
+
+#Join files containing the number and biomass of disks: nb_disk_plant_time ###################### 
+## In this file the biomass is for the dried disks (leaves_disk_mg_noChl) used for N and C isotopes measurements
+#we scanned 8-10 disks for each plant, some were used to chlorophyll measurements and some for SLA
+
+nb_disk_plant_time <-  read.csv("../input/nb_disk_plant_time.csv")
+names(nb_disk_plant_time)
+
+## add p to plant_id
+nb_disk_plant_time$plant_id <- paste0("p", nb_disk_plant_time$plant_id)
+
+leaves_disk_area= left_join(nb_disk_plant_time,leaves_disk, by = c("n_trt", "Drought_trt", "plant_id", "time" )) 
+names(leaves_disk_area)
+view(leaves_disk_area)
 
 #### Calculate SLA ############
-leaves_disk_area_chl$nb_disk_SLA = leaves_disk_area_chl$nb_disks_scanned - leaves_disk_area_chl$nb_disks_chlorophyll 
-leaves_disk_area_chl$leaf_area_for_SLA = (leaves_disk_area_chl$nb_disk_SLA*leaves_disk_area_chl$total.leaf.area)/leaves_disk_area_chl$nb_disks_scanned
-leaves_disk_area_chl$LMA = (leaves_disk_area_chl$leaves_disk_mg_noChl/leaves_disk_area_chl$leaf_area_for_SLA)*10 ## *10 to convert from mg/cm2 to g/m2
-leaves_disk_area_chl$SLA = 1/leaves_disk_area_chl$LMA #m2/g
-names(leaves_disk_area_chl)
-nrow(leaves_disk_area_chl)
 
-max(leaves_disk_area_chl$LMA) # 101.23
-min(leaves_disk_area_chl$LMA) # 29.72
+### disk area for disks dried and used for SLA (the disk_area in this df is for all disks including the disks used of chlorophyll) 
 
-# open file with chlorophyll measurements ###################
-Chl_data <- read.csv("../input/Chlorophyll_all.csv")
-names(Chl_data)
+leaves_disk_area$leaf_area_for_SLA = (leaves_disk_area$nb_disk_SLA*leaves_disk_area$leaves_disk_area)/leaves_disk_area$nb_disks_scanned
+hist(leaves_disk_area$leaf_area_for_SLA)
+## no disks scanned at t1, then no SLA
+## area in cm2, dry weight of disks in mg
+##*10 to convert from mg/cm2 to g/m2, calculation of SLA and LMA
+leaves_disk_area$LMA = (leaves_disk_area$leaves_disk_mg_noChl/leaves_disk_area$leaf_area_for_SLA)*10 
+leaves_disk_area$SLA = 1/leaves_disk_area$LMA #m2/g
 
-Chl_data <- separate(Chl_data, col = Name, into=c("ID_trt", "n_trt", "drought", "plant", "time"), sep= "_", remove=FALSE)
-Chl_data$plant <- gsub("P", "", Chl_data$plant) ### select the number of the plant
-Chl_data$plant <- as.character(Chl_data$plant)
-view(Chl_data) # Verification 
-names(Chl_data)
+hist(leaves_disk_area$LMA)
+hist(leaves_disk_area$SLA)
+names(leaves_disk_area)
 
-## calculate the mean of technical repetitions 
-Chl_data_mean <- Chl_data %>% 
-  group_by(ID_trt, n_trt, drought, plant, time) %>% 
-  summarize(Abs_649_mean = mean (Blank.chlorophyll_absorbance.649, na.rm=TRUE), Abs_665_mean = mean (Blank.chlorophyll_absorbance.665, na.rm=TRUE), 
-            Abs_649_sd= sd (Blank.chlorophyll_absorbance.649, na.rm=TRUE),  Abs_665_sd= sd (Blank.chlorophyll_absorbance.665, na.rm=TRUE))
+## rearrange columns
+leaves_disk_area <- leaves_disk_area[, c(
+  "time", "n_trt", "Drought_trt", "plant_id",
+  setdiff(names(leaves_disk_area), c("time", "n_trt", "Drought_trt", "plant_id"))
+)]
+names(leaves_disk_area)
 
-hist(Chl_data_mean$Abs_649_mean)
-hist(Chl_data_mean$Abs_665_mean)
 
-hist(Chl_data_mean$Abs_649_sd)
-hist(Chl_data_mean$Abs_665_sd)
+### load Isotopes, leaf nitrogen, and A-Ci data ################
+A_Ci_N_isotopes <-  read.csv("../input/A_Ci_N_isotopes.csv") 
+names(A_Ci_N_isotopes)
+nrow(A_Ci_N_isotopes) #192
+table(A_Ci_N_isotopes$time)
 
-view(Chl_data_mean)
-## join chlorophyll to leaves disk surface area 
-chl_area = left_join(leaves_disk_area_chl,Chl_data_mean, by = c("ID_trt", "n_trt", "drought", "plant", "time" )) 
-chl_area$Abs_649_mean
-names(chl_area)
-nrow(chl_area)
-view(chl_area)
-
-########## Estimate chl in mmole/g #######
-
-### Chl A and chl B ug per ml 
-chl_area$chlA_ugml = 12.47 * chl_area$Abs_665_mean - 3.62 * chl_area$Abs_649_mean
-chl_area$chlB_ugml = 25.06 * chl_area$Abs_649_mean - 6.5 * chl_area$Abs_665_mean
-
-### Chl A and chl B g per ml 
-chl_area$chlA_gml = chl_area$chlA_ugml / 1000000
-chl_area$chlB_gml = chl_area$chlB_ugml / 1000000
-
-### Chl A and chl B g per 10 ml (the volume of the extractant)
-chl_area$chlA_g = chl_area$chlA_gml * 10 # extracted in 10mL DMSO
-chl_area$chlB_g = chl_area$chlB_gml * 10 # extracted in 10mL DMSO
-
-### Chl A and chl B g per m2 : chl_disk_leaf_area: leaf area for the 4 disks used to extract cholrophyll
-chl_area$chlA_gm2 = chl_area$chlA_g / (chl_area$chl_disk_leaf_area / 10000)
-chl_area$chlB_gm2 = chl_area$chlB_g / (chl_area$chl_disk_leaf_area / 10000)
-
-### Chl A and chl B mmol per m2
-chl_area$chlA_mmolm2 = chl_area$chlA_gm2 / 893.51 * 1000
-chl_area$chlB_mmolm2 = chl_area$chlB_gm2 / 907.47 * 1000
-
-### Chl A and chl B mmol per g
-chl_area$chlA_mmolg = chl_area$chlA_mmolm2/chl_area$LMA
-chl_area$chlB_mmolg = chl_area$chlB_mmolm2/chl_area$LMA
-
-#### total chlorophyll #chl_LMA_disk$chl_mmolg = chl_LMA_disk$chlA_mmolg  + chl_LMA_disk$chlB_mmolg
-chl_area$chl_mmolm2 = chl_area$chlA_mmolm2  + chl_area$chlB_mmolm2
-
-#### total chlorophyll #chl_LMA_disk$chl_mmolg = chl_LMA_disk$chlA_mmolg  + chl_LMA_disk$chlB_mmolg
-chl_area$chl_gm2 = chl_area$chlA_gm2  + chl_area$chlB_gm2
-chl_area$chlmass= chl_area$chl_gm2/chl_area$LMA
-chl_area$chl_mmolg = chl_area$chlA_mmolg  + chl_area$chlB_mmolg
-
-## ratio chla/chlb
-chl_area$ratio_chlA_B = chl_area$chlA_mmolm2 / chl_area$chlB_mmolm2
-nrow(chl_area)
-
-### Isotopes, leaf nitrogen, A-Ci and biomass data ################
-A_Ci_N_isotopes_biomass <-  read.csv("../input/A_Ci_N_isotopes_biomass.csv") 
-names(A_Ci_N_isotopes_biomass)
-nrow(A_Ci_N_isotopes_biomass) #192
-
-table(A_Ci_N_isotopes_biomass$time)
-table(A_Ci_N_isotopes_biomass$block)
-table(A_Ci_N_isotopes_biomass$drought)
+A_Ci_N_isotopes$plant_id <- paste0("p",A_Ci_N_isotopes$plant_id)
 
 ################ Big Delta calculus #####################################
 delta_air = -8
-A_Ci_N_isotopes_biomass$big_D13 = (delta_air - A_Ci_N_isotopes_biomass$deltaC13)/(1+A_Ci_N_isotopes_biomass$deltaC13*0.001)
-hist(A_Ci_N_isotopes_biomass$big_D13)
+A_Ci_N_isotopes$big_D13 = (delta_air - A_Ci_N_isotopes$deltaC13)/(1+A_Ci_N_isotopes$deltaC13*0.001)
+hist(A_Ci_N_isotopes$big_D13)
 
 ######################## Chi calculus ###############################
 a = 4.4
 b = 28
-A_Ci_N_isotopes_biomass$chi= (A_Ci_N_isotopes_biomass$big_D13 -a)/(b-a)
-hist(A_Ci_N_isotopes_biomass$chi)
-names(A_Ci_N_isotopes_biomass)
+A_Ci_N_isotopes$chi= (A_Ci_N_isotopes$big_D13 -a)/(b-a)
+hist(A_Ci_N_isotopes$chi)
 
-################ Merge Iso_N_Aci and chlorophyll  data ################## 
-A_Ci_N_isotopes_biomass$plant <- as.character(A_Ci_N_isotopes_biomass$plant)
+names(A_Ci_N_isotopes)
+view(A_Ci_N_isotopes)
 
-Iso_N_Aci_chl = left_join(A_Ci_N_isotopes_biomass,chl_area, by = c("ID_trt", "n_trt", "drought", "plant",
-                                                                        "time", "date")) 
-names(Iso_N_Aci_chl)
-nrow(Iso_N_Aci_chl)
-View(Iso_N_Aci_chl)
+names(leaves_disk_area)
+view(leaves_disk_area)
+################ Merge with SLA/LMA data ################## 
 
+Iso_leaf_traits = left_join(leaves_disk_area, A_Ci_N_isotopes, by = c("time", "n_trt", "Drought_trt", "plant_id"))
+                                                           
+names(Iso_leaf_traits)
+view(Iso_leaf_traits)
 
-######## calculate Nmass 
-Iso_N_Aci_chl$Nmass= Iso_N_Aci_chl$percentage_N/100
-hist(Iso_N_Aci_chl$Nmass)
+######## calculate Nmass gN/gleaf
+Iso_leaf_traits$Nmass= Iso_leaf_traits$percentage_N/100
+hist(Iso_leaf_traits$Nmass)
 
-######## calculate Narea 
-Iso_N_Aci_chl$Narea= Iso_N_Aci_chl$Nmass * Iso_N_Aci_chl$LMA
-hist(Iso_N_Aci_chl$Narea)
-
-### calculate the relative proportion of nitrogen in Rubisco (ρrubisco; gN gN−1) Waring et al., 2023)
-Nr = 0.16 # the amount of nitrogen in Rubisco, assumed to be 0.16 gN (g Rubisco)−1
-Vcr = 20.5 # is the specific activity of Rubisco, assumed to be 20.5 µmol CO2 (g Rubisco)−1 s−1 at 25 °C
-Iso_N_Aci_chl$nrubisco = (Iso_N_Aci_chl$vcmax_tleaf * Nr)/(Iso_N_Aci_chl$Narea*Vcr)
-hist(Iso_N_Aci_chl$nrubisco)
-
-### calculate the relative proportion of nitrogen in bioenergetics: ρbioenergetics; gN gN−1 (Waring et al., 2023)
-Nb = 0.1240695 # the amount of nitrogen in cytochrome f, assumed to be 0.1240695 g N (µmol cytochrome f)−1
-Jmc = 156 # a the capacity of electron transport per cytochrome f, set to 156 μmol electron (μmol cytochrome f)−1 s−1 
-
-Iso_N_Aci_chl$nbioe = (Iso_N_Aci_chl$jmax_tleaf * Nb)/(Iso_N_Aci_chl$Narea*Jmc)
-hist(Iso_N_Aci_chl$nbioe)
-
-### calculate the relative proportion of nitrogen in light harvesting (ρlightharvesting; gN gN−1), Waring et al., 2023)
-Cb = 2.75 #  the chlorophyll binding of the thylakoid protein complexes, assumed to be 2.75 mmol chlorophyll (g chlorophyll N)−1
-
-Iso_N_Aci_chl$nlightharvesting = (Iso_N_Aci_chl$chl_mmolm2)/(Iso_N_Aci_chl$Narea*Cb)
-hist(Iso_N_Aci_chl$nlightharvesting)
-
-############### Total nitrogen allocated to photosynthesis #########
-Iso_N_Aci_chl$nphoto = Iso_N_Aci_chl$nrubisco + Iso_N_Aci_chl$nbioe + Iso_N_Aci_chl$nlightharvesting
-
-### Ncw : N allocated to the cell wall
-Iso_N_Aci_chl$Ncw= 0.000355*Iso_N_Aci_chl$LMA^1.39
-
-############## N structure ##############
-Iso_N_Aci_chl$Nstrucutre = Iso_N_Aci_chl$Ncw/ Iso_N_Aci_chl$Narea
-#Iso_N_Aci_chl$Nstrucutre = (10^-2.67) * (Iso_N_Aci_chl$lma ^ 0.99)
-names(Iso_N_Aci_chl)
+######## calculate Narea gN/m2
+Iso_leaf_traits$Narea= Iso_leaf_traits$Nmass * Iso_leaf_traits$LMA
+hist(Iso_leaf_traits$Narea)
 
 ############################# call functions to calculate beta and chi #################################################
 install.packages ("R.utils") # to read source function
 library (R.utils)
-
-getwd()
 sourceDirectory("../scripts/functions", modifiedOnly = FALSE, verbose = TRUE)
 ################ calculate atmospheric pressure (Pa) from elevation (m)#####################
-Iso_N_Aci_chl$z = 976
+Iso_leaf_traits$z = 976
 calc_patm = function(z) {
   
   kPo = 101325   # standard atmosphere, Pa (Allen, 1973)
@@ -214,7 +150,7 @@ calc_patm = function(z) {
   patm
 }
 
-Iso_N_Aci_chl$patm<- calc_patm(Iso_N_Aci_chl$z)
+Iso_leaf_traits$patm<- calc_patm(Iso_leaf_traits$z)
 
 ################ calculate  nstar (unitless relative viscosity of h2o at temperature relative to 25°C) ####################
 calc_nstar = function(temp, z){ # temp in °C and z in m
@@ -230,7 +166,7 @@ calc_nstar = function(temp, z){ # temp in °C and z in m
   
 }
 # Apparently it call automatically calc_viscositt_h2o 
-Iso_N_Aci_chl$nstar<- calc_nstar(temp = Iso_N_Aci_chl$tmp, z = Iso_N_Aci_chl$z)
+Iso_leaf_traits$nstar<- calc_nstar(temp = Iso_leaf_traits$tmp, z = Iso_leaf_traits$z)
 
 ########################## calculate gammastar (Pa) ###############################################
 calc_gammastar_pa = function(temp, z) {
@@ -251,7 +187,7 @@ calc_gammastar_pa = function(temp, z) {
   gStar_pa
   
 }
-Iso_N_Aci_chl$gammastar_pa <-calc_gammastar_pa(temp = Iso_N_Aci_chl$tmp, z = Iso_N_Aci_chl$z)
+Iso_leaf_traits$gammastar_pa <-calc_gammastar_pa(temp = Iso_leaf_traits$tmp, z = Iso_leaf_traits$z)
 
 ######## calcualte the Michaelis-Menton coefficient (Pa) for Rubisco from temperature##############################
 calc_km_pa = function(temp, z) {
@@ -279,90 +215,189 @@ calc_km_pa = function(temp, z) {
   
 }
 
-Iso_N_Aci_chl$Km<-calc_km_pa(temp = Iso_N_Aci_chl$tmp, z = Iso_N_Aci_chl$z)
+Iso_leaf_traits$Km<-calc_km_pa(temp = Iso_leaf_traits$tmp, z = Iso_leaf_traits$z)
 
-names(Iso_N_Aci_chl)
+names(Iso_leaf_traits)
 ##################### Beta calculus ######################################
-Iso_N_Aci_chl$D <- Iso_N_Aci_chl$VPD*1000
-Iso_N_Aci_chl$ca <- 420
-Iso_N_Aci_chl$beta_num <- 1.6 * Iso_N_Aci_chl$nstar * Iso_N_Aci_chl$D * ((Iso_N_Aci_chl$chi-Iso_N_Aci_chl$gammastar_pa/Iso_N_Aci_chl$ca) ^ 2)
-Iso_N_Aci_chl$beta_denom <- ((1 - Iso_N_Aci_chl$chi)^2) * (Iso_N_Aci_chl$Km + Iso_N_Aci_chl$gammastar_pa)
+Iso_leaf_traits$D <- Iso_leaf_traits$VPD*1000
+Iso_leaf_traits$ca <- 420
+Iso_leaf_traits$beta_num <- 1.6 * Iso_leaf_traits$nstar * Iso_leaf_traits$D * ((Iso_leaf_traits$chi-Iso_leaf_traits$gammastar_pa/Iso_leaf_traits$ca) ^ 2)
+Iso_leaf_traits$beta_denom <- ((1 - Iso_leaf_traits$chi)^2) * (Iso_leaf_traits$Km + Iso_leaf_traits$gammastar_pa)
 
-Iso_N_Aci_chl$betaleaf <- Iso_N_Aci_chl$beta_num / Iso_N_Aci_chl$beta_denom
+Iso_leaf_traits$betaleaf <- Iso_leaf_traits$beta_num / Iso_leaf_traits$beta_denom
 
-summary(Iso_N_Aci_chl$beta_num)
-hist(Iso_N_Aci_chl$beta_num)
-plot(Iso_N_Aci_chl$beta_num, Iso_N_Aci_chl$chi)
-plot(Iso_N_Aci_chl$beta_denom, Iso_N_Aci_chl$chi)
-plot(Iso_N_Aci_chl$chi, Iso_N_Aci_chl$betaleaf)
-plot(Iso_N_Aci_chl$chi, log(Iso_N_Aci_chl$betaleaf))
+summary(Iso_leaf_traits$beta_num)
+hist(Iso_leaf_traits$beta_num)
+hist(Iso_leaf_traits$betaleaf)
+plot(Iso_leaf_traits$beta_num, Iso_leaf_traits$chi)
+plot(Iso_leaf_traits$beta_denom, Iso_leaf_traits$chi)
+plot(Iso_leaf_traits$chi, Iso_leaf_traits$betaleaf)
+plot(Iso_leaf_traits$chi, log(Iso_leaf_traits$betaleaf))
 
+#################### Load transpiration and drought data #################
+transpiration <- read.csv("../input/transpiration_all.csv")
+names(transpiration)
+transpiration$plant_id <- paste0("p", transpiration$plant_id)
 
-##################### Morphology ##################################################
-morpho_all_sum_plant <- read.csv("../input/morpho_all_sum_plant.csv")
+# Extract the values for each individual plant at the end of the experiment of the cumulative Transpiration, Nitrogen and DS daily
+transpiration_final <- transpiration %>%
+  group_by(n_trt, Drought_trt, plant_id) %>%
+  filter(DAD == max(DAD, na.rm = TRUE)) %>%
+  slice_tail(n = 1) %>%
+  ungroup() %>%
+  select(n_trt,Drought_trt,plant_id,DAD,
+         transpiration_cumul_L,Cumulative_N_mg, Sum_DS_daily)
+transpiration_final
+names(transpiration_final)
+transpiration_final <- transpiration_final %>%
+  rename(DAD_final = DAD)
+view(transpiration_final)
 
-######### Combine with Iso_N_Aci_chl
-morpho_all_sum_plant$plant <- gsub("P", "", morpho_all_sum_plant$plant) ### select the number of the plant
+################### calculate the total leaf area per plant ################
+
+########### open the file containing dimensions of leaves scanned at t4 ###########
+leaves_WL <- read.csv("../input/Leaves_scan_dimensions.csv")
+leaves_WL
+leaves_WL <- separate(leaves_WL, col = sample, into=c("ID_trt", "n_trt", "Drought_trt", "plant_id", "leaf"), sep= "_", remove=FALSE)
+view(leaves_WL) # Verification 
+leaves_WL$ID_trt = NULL # remove the ID_trt, it is not useful
+leaves_WL$sample = NULL # remove the samples, it is not useful anymore
+leaves_WL$plant_id<- tolower(leaves_WL$plant_id) # make capital P small p
+
+################# Join with the file leaf area file 
+names(leaves_area)
+leaves_WL_area = left_join(leaves_WL,leaves_area, by = c("n_trt", "Drought_trt", "plant_id", "leaf")) 
+names(leaves_WL_area)
+view(leaves_WL_area) 
+
+leaves_WL_area$WxL = leaves_WL_area$Length * leaves_WL_area$Width  ## calculate length * width
+
+plot(leaves_WL_area$WxL, leaves_WL_area$total.leaf.area) ## linear relationship
+
+model <- lm(total.leaf.area ~ WxL, data = leaves_WL_area)
+
+summary(model)
+summary(model)$r.squared ## 0.98
+coef(model)
+
+#Equation : leaf_area = 0.692*WxL + 3.1065
+
+### equation deduced from the relationship between leaf scans and the product of their width and length : R2=0.98
+
+### now loaf the file containing the length and width of each leaf/plant/date
+morpho <- read.csv("../input/morpho.csv")
+morpho
+########### calculate length X width for each leaf/plant/time
+morpho$WxL = morpho$length * morpho$width
+hist(morpho$WxL)
+
+## calculate the leaf area for each time using the deduced equation
+morpho$leaf_area = 0.692*morpho$WxL + 3.1065 
+hist(morpho$leaf_area)
+
+names(morpho)
+morpho$plant_id
+#################  calculate the plant surface area by summing all leaves/plant/time 
+morpho_all_sum_plant <- morpho %>%  
+  group_by (n_trt,Drought_trt,plant_id, time) %>% 
+  summarize(plant_surface_area = sum (leaf_area, na.rm = TRUE))
+morpho_all_sum_plant
+
+view(morpho_all_sum_plant)
 names(morpho_all_sum_plant)
-names(Iso_N_Aci_chl)
-sunflower_all_data = left_join(Iso_N_Aci_chl, morpho_all_sum_plant, by = c("ID_trt", "n_trt", "drought", "plant", "time"))
-Iso_N_Aci_chl$time
-morpho_all_sum_plant$time
-names(sunflower_all_data)
-View(sunflower_all_data)
-#### calculate sum biomass ###########
-sunflower_all_data$Abg_all = sunflower_all_data$total_leaves+sunflower_all_data$stem+sunflower_all_data$rep_org+sunflower_all_data$senescence
-sunflower_all_data$Abg_t4= sunflower_all_data$total_leaves+sunflower_all_data$stem+sunflower_all_data$rep_org
-sunflower_all_data$biomass_t4= sunflower_all_data$Abg_t4+sunflower_all_data$roots
-sunflower_all_data$biomass_all= sunflower_all_data$Abg_all+sunflower_all_data$roots
-sunflower_all_data$RS_t4 = sunflower_all_data$roots/sunflower_all_data$Abg_t4
-sunflower_all_data$RS_all = sunflower_all_data$roots/sunflower_all_data$Abg_all
-sunflower_all_data$root_total= sunflower_all_data$roots/sunflower_all_data$biomass_t4
-sunflower_all_data$leaves_stem_ratio = sunflower_all_data$total_leaves/sunflower_all_data$stem
-sunflower_all_data$Abg_flowers_ratio = sunflower_all_data$rep_org /sunflower_all_data$Abg_t4
-sunflower_all_data$stem_and_roots = sunflower_all_data$stem + sunflower_all_data$roots
 
-########### calculation of the cost of transpiration ###################
-######### roots and stems 
-sunflower_all_data$cost_trans = sunflower_all_data$stem_and_roots/sunflower_all_data$transpiration
-hist(sunflower_all_data$cost_trans)
-######## roots
-sunflower_all_data$Ecost = sunflower_all_data$roots/sunflower_all_data$transpiration
+
+############################ Load biomass data ######################
+biomass <- read.csv("../input/Biomass_final.csv")
+names (biomass)
+biomass$plant_id <- paste0("p", biomass$plant_id)
+
+#################### Join biomass to plant surface area ###################
+biomass_surface = left_join(biomass,morpho_all_sum_plant, by = c("n_trt", "Drought_trt", "plant_id",
+                                                                   "time")) 
+names(biomass_surface)
+
+### join to transpiration #############
+biomass_surface_transpiration = left_join(biomass_surface,transpiration_final, by = c("n_trt", "Drought_trt", "plant_id")) 
+names(biomass_surface_transpiration)
+view(biomass_surface_transpiration)
+##### Join to iso_N_A_Ci data ####################
+names(Iso_leaf_traits)
+names(biomass_surface_transpiration)
+sunflower_all_data = left_join(Iso_leaf_traits, biomass_surface_transpiration, by = c("time","n_trt", "Drought_trt", "plant_id"))
+sunflower_all_data
+names(sunflower_all_data)
+view(sunflower_all_data)
+
+#### calculate sum biomass ###########
+
+sunflower_all_data$Abg_all_dry = sunflower_all_data$dry_leaves_petioles+sunflower_all_data$dry_stem+sunflower_all_data$dry_flowers+sunflower_all_data$dry_senesced_leaves
+hist(sunflower_all_data$Abg_all_dry) # Dry Aboveground biomass in g
+
+sunflower_all_data$Abg_all_fresh = sunflower_all_data$fresh_leaves_petioles+sunflower_all_data$fresh_stem+sunflower_all_data$fresh_flowers
+hist(sunflower_all_data$Abg_all_fresh) # fresh Aboveground biomass g 
+
+sunflower_all_data$biomass_all= sunflower_all_data$Abg_all_dry+sunflower_all_data$dry_roots
+hist(sunflower_all_data$biomass_all) # Total dry  biomass 
+
+########### calculation of the cost of transpiration Ecost gdry roots/liter water ###################
+sunflower_all_data$Ecost = sunflower_all_data$dry_roots/sunflower_all_data$transpiration
 hist(sunflower_all_data$Ecost)
 
-sunflower_all_data$ratio_J_V = sunflower_all_data$jmax_tleaf/sunflower_all_data$vcmax_tleaf
-hist(sunflower_all_data$ratio_J_V )
+########### calculation of Ecost considering water stored in the plant gdry roots/liter water  ###################
+sunflower_all_data$water_stored = sunflower_all_data$Abg_all_fresh-sunflower_all_data$Abg_all_dry
+hist(sunflower_all_data$water_stored)
+
+sunflower_all_data$Ecost_bis = sunflower_all_data$dry_roots/(sunflower_all_data$transpiration + sunflower_all_data$water_stored)
+hist(sunflower_all_data$Ecost_bis)
+
+plot(sunflower_all_data$Ecost_bis, sunflower_all_data$Ecost)
+
+################### calculate Ncost g Roots / gN leaves ######################## 
+
+sunflower_all_data$N_total_leaves = sunflower_all_data$Nmass * sunflower_all_data$dry_leaves_petioles
+hist(sunflower_all_data$N_total_leaves)
+hist(sunflower_all_data$Nmass)
+
+
+sunflower_all_data$Ncost = sunflower_all_data$dry_roots/sunflower_all_data$N_total_leaves
+hist(sunflower_all_data$Ncost)
+
+sunflower_all_data$betaplant = sunflower_all_data$Ncost/sunflower_all_data$Ecost
+hist(sunflower_all_data$betaplant)
+
+plot(log(sunflower_all_data$betaplant), log(sunflower_all_data$betaleaf))
+
+########## calculate the standardized cumulative drought severity DSI  ########
+sunflower_all_data$DSI= sunflower_all_data$Sum_DS_daily/sunflower_all_data$DAD
+hist(sunflower_all_data$DSI)
+write.csv(sunflower_all_data, "../output/sunflower_all.csv", row.names = FALSE)
+names(sunflower_all_data)
+
+#### clean the final output file  
+sunflower_all_data$date.x = NULL 
+sunflower_all_data$leaves_disk_mg_noChl = NULL 
+sunflower_all_data$nb_disks_scanned = NULL 
+sunflower_all_data$nb_disk_SLA = NULL 
+sunflower_all_data$leaves_disk_area = NULL 
+sunflower_all_data$leaf_area_for_SLA = NULL 
+sunflower_all_data$nb_disk_SLA = NULL 
+sunflower_all_data$aci_RMSE = NULL 
+sunflower_all_data$tmp = NULL
+sunflower_all_data$VPD = NULL
+sunflower_all_data$z = NULL
+sunflower_all_data$patm = NULL
+sunflower_all_data$nstar = NULL
+sunflower_all_data$gammastar_pa = NULL
+sunflower_all_data$Km = NULL
+sunflower_all_data$D = NULL
+sunflower_all_data$ca = NULL
+sunflower_all_data$beta_num = NULL
+sunflower_all_data$beta_denom = NULL
 
 names(sunflower_all_data)
-sunflower_all_data$N_total_leaves = sunflower_all_data$Nmass * sunflower_all_data$total_leaves
-sunflower_all_data$Ncost = sunflower_all_data$roots/sunflower_all_data$N_total_leaves
-sunflower_all_data$WUE = sunflower_all_data$Abg_all/sunflower_all_data$transpiration
-sunflower_all_data$NUE = sunflower_all_data$Abg_all/sunflower_all_data$Cumul_N
 
-sunflower_all_data$betaplant = sunflower_all_data$Ncost/sunflower_all_data$cost_trans
+write.csv(sunflower_all_data, "../output/sunflower_clean.csv", row.names = FALSE)
 
 
-########## calculate the standardized cumulative drought severity (Cumul-DD)  ########
-sunflower_all_data$Sdt_DD = sunflower_all_data$Cumul_DD/sunflower_all_data$DAD
-
-sunflower_all_data$n_trt
-sunflower_all_data$N_level[sunflower_all_data$n_trt == 'LN'] <- '70 ppm'
-sunflower_all_data$N_level[sunflower_all_data$n_trt == 'HN'] <- '210 ppm'
-sunflower_all_data$N_level <- as.factor(sunflower_all_data$N_level)
-sunflower_all_data$block <- factor(sunflower_all_data$block)
-sunflower_all_data$plant <- factor(sunflower_all_data$plant)
-sunflower_all_data$n_trt <- factor(sunflower_all_data$n_trt)
-sunflower_all_data$drought <- factor(sunflower_all_data$drought)
-sunflower_all_data$time <- factor(sunflower_all_data$time)
-sunflower_all_data$Cumul_N <- as.numeric(sunflower_all_data$Cumul_N)
-sunflower_all_data$Cumul_FC <- as.numeric(sunflower_all_data$Cumul_FC)
-sunflower_all_data$Cumul_DD <- as.numeric(sunflower_all_data$Cumul_DD)
-sunflower_all_data$treatment <- interaction(sunflower_all_data$n_trt, sunflower_all_data$drought, sep = " x ")
-
-sunflower_all_data$Sdt_DD[is.na(sunflower_all_data$Sdt_DD)] <- 0
-
-#############################################################################################################
-#############################################################################################################
-write.csv(sunflower_all_data, "../output/sunflower.csv", row.names = FALSE)
-names(sunflower_all_data)
 
