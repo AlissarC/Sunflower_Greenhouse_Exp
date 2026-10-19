@@ -39,6 +39,18 @@ Figures were generated using these R scripts, except for **Figure 1b and Figure 
 
 The `scripts/functions/` folder contains R functions called by the main scripts, including functions used to calculate leaf-level carbon costs.
 
+### `output/`
+
+The `output` folder contains final files used in the analysis.
+
+### `Fig/`
+
+The `Fig` folder contains final figures presented in the manuscript.
+
+### `tables/`
+
+The `tables` folder contains the outputs of the lmms applied and presented in the manuscript.
+
 ## Data and metadata
 
 Metadata files describing the variables, units, and other relevant information associated with the datasets are provided with the data in the `input/` folder.
