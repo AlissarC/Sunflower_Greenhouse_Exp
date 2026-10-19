@@ -20,7 +20,7 @@ The `input` folder contains the data used in the analyses, including:
 - Leaf trait data, including gas exchange (A-Ci curves), leaf nitrogen, and isotope measurements
 - Plant morphology data
 - Leaf and leaf-disk scan images
-- Metadata describing the variables included in the data files
+- Metadata files describing the variables, units, and other relevant information associated with the datasets 
 
 ### `scripts/`
 
@@ -51,9 +51,6 @@ The `Fig` folder contains final figures presented in the manuscript.
 
 The `tables` folder contains the outputs of the lmms applied and presented in the manuscript.
 
-## Data and metadata
-
-Metadata files describing the variables, units, and other relevant information associated with the datasets are provided with the data in the `input/` folder.
 
 ## Citation
 
